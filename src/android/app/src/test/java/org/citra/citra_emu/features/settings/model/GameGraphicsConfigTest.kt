@@ -131,12 +131,12 @@ class GameGraphicsConfigTest {
         assertEquals("1", restored.effective("Renderer", "lsfg_mode", global, "0"))
     }
 
-    @Test fun lsfg120ModePersistsIndependentlyOfGlobalMode() {
+    @Test fun removedLsfg120ModeMigratesWithoutLosingOverride() {
         val global = GameGraphicsConfig("[Renderer]\nlsfg_mode=1\n")
         val game = GameGraphicsConfig("[Renderer]\nlsfg_mode=2\n")
         global.set("Renderer", "lsfg_mode", "0")
         val restored = GameGraphicsConfig(game.encode())
-        assertEquals("2", restored.effective("Renderer", "lsfg_mode", global, "0"))
+        assertEquals("1", restored.effective("Renderer", "lsfg_mode", global, "0"))
         restored.set("Renderer", "lsfg_mode", null)
         assertEquals("0", restored.effective("Renderer", "lsfg_mode", global, "0"))
     }

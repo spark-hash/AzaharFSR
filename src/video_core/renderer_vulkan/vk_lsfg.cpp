@@ -151,7 +151,7 @@ void Lsfg::Create(u32 w, u32 h, const std::string& path, unsigned factor) {
                 instance.GetGraphicsQueueFamilyIndex(), instance.GetGraphicsQueue(),
                 VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr,
                 instance.IsNullDescriptorSupported(), 1.0f,
-                [path](const std::string& name) { return LoadShader(path, name); }, 3);
+                [path](const std::string& name) { return LoadShader(path, name); }, 1);
         } catch (...) {
             LSFG_3_1P::finalize();
             throw;
@@ -281,9 +281,7 @@ Lsfg::Result Lsfg::Prepare(Frame* frame) {
             if (history && cadence_ok) {
                 result.generated.assign(images.begin() + 2, images.end());
                 result.spacing = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
-                    std::chrono::duration<double>(LsfgSpacing(
-                        factor, Settings::values.lsfg_mode.GetValue() == 1 ? 60.0 : 120.0,
-                        input_seconds)));
+                    std::chrono::duration<double>(LsfgSpacing(factor, 60.0, input_seconds)));
                 Status(3, std::chrono::duration<double, std::milli>(elapsed).count());
             } else {
                 Status(2);

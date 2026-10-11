@@ -10,6 +10,9 @@ class GameGraphicsConfig(text: String = "") {
     private val ini = Wini(StringReader(text))
 
     init {
+        if (getOverride("Renderer", "lsfg_mode") == "2") {
+            ini.put("Renderer", "lsfg_mode", "1")
+        }
         if (getOverride("Renderer", "upscaling_mode") == null) {
             getOverride("Renderer", "fsr_enabled")?.let {
                 ini.put(

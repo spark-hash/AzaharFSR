@@ -45,6 +45,10 @@ class Settings {
             loadCustomGameSettings(gameId!!, view)
         }
         val renderer = sections[SECTION_RENDERER]
+        if (IntSetting.LSFG_MODE.int == 2) {
+            IntSetting.LSFG_MODE.int = 1
+            renderer?.putSetting(IntSetting.LSFG_MODE)
+        }
         if (renderer?.getSetting(IntSetting.UPSCALING_MODE.key) == null) {
             IntSetting.UPSCALING_MODE.int = if (BooleanSetting.FSR_ENABLED.boolean) 1 else 0
             renderer?.putSetting(IntSetting.UPSCALING_MODE)

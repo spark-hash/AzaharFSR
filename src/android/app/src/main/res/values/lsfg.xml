@@ -10,7 +10,7 @@
     <string name="lsfg_import_failed">Import failed: %1$s</string>
     <string name="lsfg_ready">Shaders imported. Enable LSFG in graphics settings.</string>
     <string name="lsfg_missing">Shaders have not been imported.</string>
-    <string-array name="lsfgNames"><item>Off</item><item>LSFG · Up to 60 FPS</item><item>LSFG · Up to 120 FPS</item></string-array>
-    <integer-array name="lsfgValues"><item>0</item><item>1</item><item>2</item></integer-array>
+    <string-array name="lsfgNames"><item>Off</item><item>LSFG · Up to 60 FPS</item></string-array>
+    <integer-array name="lsfgValues"><item>0</item><item>1</item></integer-array>
     <string-array name="lsfgStatus"><item>Off</item><item>Files missing</item><item>Preparing</item><item>Active</item><item>Skipped</item><item>Unavailable</item></string-array>
 </resources>
