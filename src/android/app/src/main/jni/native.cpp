@@ -1069,6 +1069,11 @@ void Java_org_citra_citra_1emu_NativeLibrary_reloadSettings([[maybe_unused]] JNI
             Settings::values.async_custom_loading = async_custom;
             Settings::values.renderer_debug = renderer_debug;
         }
+        // The legacy texture filter is distinct from full-frame Anime4K upscaling.
+        if (Settings::values.graphics_api.GetValue() == Settings::GraphicsAPI::Vulkan &&
+            Settings::values.texture_filter.GetValue() == Settings::TextureFilter::Anime4K) {
+            Settings::values.texture_filter = Settings::TextureFilter::NoFilter;
+        }
     }
 
     if (multiplayer) {
