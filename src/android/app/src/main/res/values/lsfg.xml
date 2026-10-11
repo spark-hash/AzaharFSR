@@ -12,6 +12,5 @@
     <string name="lsfg_missing">Shaders have not been imported.</string>
     <string-array name="lsfgNames"><item>Off</item><item>LSFG 2× (30 → 60)</item></string-array>
     <integer-array name="lsfgValues"><item>0</item><item>1</item></integer-array>
-    <string name="lsfg_diagnostics">LSFG: real %1$.1f / output %2$.1f FPS · %3$.1f ms · %4$s</string>
-    <string-array name="lsfgStatus"><item>Off</item><item>Shaders missing</item><item>Warming up</item><item>Active</item><item>Cadence bypass</item><item>Failed</item></string-array>
+    <string-array name="lsfgStatus"><item>Off</item><item>Files missing</item><item>Preparing</item><item>Active</item><item>Skipped</item><item>Unavailable</item></string-array>
 </resources>

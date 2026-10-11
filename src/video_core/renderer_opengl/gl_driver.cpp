@@ -6,6 +6,7 @@
 #include "common/assert.h"
 #include "common/settings.h"
 #include "video_core/custom_textures/custom_format.h"
+#include "video_core/renderer_base.h"
 #include "video_core/renderer_opengl/gl_driver.h"
 #include "video_core/renderer_opengl/gl_vars.h"
 
@@ -129,6 +130,7 @@ void Driver::ReportDriverInfo() {
     gl_version = std::string_view{reinterpret_cast<const char*>(glGetString(GL_VERSION))};
     gpu_vendor = std::string_view{reinterpret_cast<const char*>(glGetString(GL_VENDOR))};
     gpu_model = std::string_view{reinterpret_cast<const char*>(glGetString(GL_RENDERER))};
+    VideoCore::SetActiveDriverInfo({"OpenGL", std::string{gpu_vendor}, std::string{gl_version}});
 
     LOG_INFO(Render_OpenGL, "GL_VERSION: {}", gl_version);
     LOG_INFO(Render_OpenGL, "GL_VENDOR: {}", gpu_vendor);

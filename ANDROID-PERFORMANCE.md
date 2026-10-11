@@ -4,13 +4,11 @@ Enable Performance diagnostics in the in-game overlay options menu. Enabling it 
 
 The panel refreshes once per second, uses multiple lines and is bounded by screen width. Existing overlay position settings apply. No phone installation or device testing was performed.
 
-- Game FPS counts GSP frame submissions; system Hz counts emulated LCD VBlanks. A 30 FPS game can run at normal speed with a roughly 60 Hz system rate.
+- FPS counts game GSP frame submissions. With active LSFG, the same line shows game FPS → output presentation FPS and 2× frame generation. The output rate is measured from real and generated presentation counters; it is not assumed to be twice game FPS or the display refresh rate. When interpolation is inactive, the line shows its status instead.
 - Speed is emulated time divided by elapsed wall time. 100% means normal emulation speed.
-- Active frame is mean processing time per system frame, excluding frame limiter/vsync outside the active frame. It is not display latency or an individual frame percentile.
-- GPU commands measures CPU wall time handling guest GPU commands, not host GPU execution time.
-- Present / wait measures SwapBuffers, including waits for the host GPU. It cannot alone identify a GPU bottleneck.
-- IPC, SVC and Other show mean processing time per system frame. Nested GPU and IPC time is excluded from parent categories.
-- Process RSS uses the actual OS page size (including 16 KB devices), in MiB. Failed reads display a dash. Free is Android available memory, including reclaimable memory.
+- The four rows are FPS/frame generation, speed, memory/battery, and GPU driver. CPU stage timings and emulated system Hz are omitted. The configurable compact overlay also uses the merged FPS line, and its frame-time option shows only total processing time.
+- Memory uses process RSS and the actual OS page size (including 16 KB devices), displayed in binary megabytes. Failed reads display a dash. Free is Android available memory, including reclaimable memory.
 - Battery temperature is not CPU or GPU temperature.
+- Driver data comes from the active renderer, copied under a mutex, so selecting a driver that fails to load will not falsely label the system fallback. Qualcomm is abbreviated as QCOM (高通), Turnip as Turnip (萝卜). Vulkan reports its decoded driver version; OpenGL extracts V@ or Mesa driver versions and omits unavailable versions rather than showing the OpenGL API version. Custom archive revision names such as R-series are not inferred from the runtime version.
 
 AI-assisted implementation in this personal fork.

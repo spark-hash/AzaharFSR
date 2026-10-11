@@ -3,6 +3,8 @@
 // Refer to the misc/licenses/gplv2.txt file included.
 
 #pragma once
+#include <array>
+#include <string>
 
 #include "common/common_types.h"
 #include "core/frontend/framebuffer_layout.h"
@@ -17,6 +19,10 @@ class System;
 }
 
 namespace VideoCore {
+
+// Immutable driver strings copied at initialization, safe to read from the Android UI thread.
+void SetActiveDriverInfo(std::array<std::string, 3> info);
+std::array<std::string, 3> GetActiveDriverInfo();
 
 enum class ScreenId : u32 {
     TopLeft,

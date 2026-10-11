@@ -80,6 +80,7 @@ import org.citra.citra_emu.model.Game
 import org.citra.citra_emu.utils.BuildUtil
 import org.citra.citra_emu.utils.DirectoryInitialization
 import org.citra.citra_emu.utils.DirectoryInitialization.DirectoryInitializationState
+import org.citra.citra_emu.utils.DriverSummary
 import org.citra.citra_emu.utils.EmulationLifecycleUtil
 import org.citra.citra_emu.utils.EmulationMenuSettings
 import org.citra.citra_emu.utils.GameHelper
@@ -1539,16 +1540,9 @@ class EmulationFragment :
         val inset = if (diagnostics) (6 * resources.displayMetrics.density).toInt() else 0
         overlay.setPadding(inset, inset, inset, inset)
         if (BooleanSetting.PERF_OVERLAY_ENABLE.boolean) {
-            @Suppress("UnusedVariable")
-            val systemFps = 0
             val fps = 1
             val speed = 2
             val frametime = 3
-            val timeSvc = 4
-            val timeIpc = 5
-            val timeGpu = 6
-            val timeSwap = 7
-            val timeRem = 8
             var lastLsfg = NativeLibrary.getLsfgStats()
             var lastPresentationTime = android.os.SystemClock.elapsedRealtime()
             perfStatsUpdater = Runnable {
@@ -1558,6 +1552,30 @@ class EmulationFragment :
                     if (!perfStats[index].isFinite()) perfStats[index] = 0.0
                 }
                 val dividerString = "\u00A0\u2502 "
+                val lsfg = NativeLibrary.getLsfgStats()
+                val now = android.os.SystemClock.elapsedRealtime()
+                val seconds = ((now - lastPresentationTime) / 1000.0).coerceAtLeast(0.001)
+                val frameGeneration = lsfg.size == 4 && lastLsfg.size == 4 &&
+                    lsfg[3].isFinite() && lsfg[3].toInt() != 0
+                val fpsText = if (frameGeneration) {
+                    val realFps = ((lsfg[0] - lastLsfg[0]) / seconds).coerceAtLeast(0.0)
+                    val outputFps = realFps +
+                        ((lsfg[1] - lastLsfg[1]) / seconds).coerceAtLeast(0.0)
+                    val states = resources.getStringArray(R.array.lsfgStatus)
+                    if (lsfg[3].toInt() == 3) {
+                        getString(R.string.performance_fps_generated, perfStats[fps], outputFps)
+                    } else {
+                        getString(
+                            R.string.performance_fps_generation_status,
+                            perfStats[fps],
+                            states[lsfg[3].toInt().coerceIn(states.indices)]
+                        )
+                    }
+                } else {
+                    getString(R.string.performance_fps_simple, perfStats[fps])
+                }
+                lastLsfg = lsfg
+                lastPresentationTime = now
                 if (diagnostics) {
                     val ram = processResidentMiB()?.toString() ?: "—"
                     val memory = ActivityManager.MemoryInfo()
@@ -1565,49 +1583,25 @@ class EmulationFragment :
                         .getMemoryInfo(memory)
                     overlay.text = getString(
                         R.string.performance_diagnostics_values,
-                        perfStats[fps], perfStats[systemFps], perfStats[speed] * 100,
-                        perfStats[frametime] * 1000, perfStats[timeGpu] * 1000,
-                        perfStats[timeSwap] * 1000, perfStats[timeIpc] * 1000,
-                        perfStats[timeSvc] * 1000, perfStats[timeRem] * 1000,
-                        ram, memory.availMem / 1048576L, getBatteryTemperature()
+                        fpsText,
+                        perfStats[speed] * 100,
+                        ram,
+                        memory.availMem / 1048576L,
+                        getBatteryTemperature(),
+                        activeDriverLabel()
                     )
-                    val lsfg = NativeLibrary.getLsfgStats()
-                    val now = android.os.SystemClock.elapsedRealtime()
-                    val seconds = ((now - lastPresentationTime) / 1000.0).coerceAtLeast(0.001)
-                    if (IntSetting.LSFG_MODE.int != 0 && lsfg.size == 4 && lastLsfg.size == 4) {
-                        val realFps = ((lsfg[0] - lastLsfg[0]) / seconds).coerceAtLeast(0.0)
-                        val outputFps =
-                            realFps + ((lsfg[1] - lastLsfg[1]) / seconds).coerceAtLeast(0.0)
-                        val states = resources.getStringArray(R.array.lsfgStatus)
-                        overlay.append(
-                            "\n" + getString(
-                                R.string.lsfg_diagnostics,
-                                realFps,
-                                outputFps,
-                                lsfg[2],
-                                states[lsfg[3].toInt().coerceIn(states.indices)]
-                            )
-                        )
-                    }
-                    lastLsfg = lsfg
-                    lastPresentationTime = now
                     overlay.setBackgroundResource(R.color.citra_transparent_black)
                 } else {
                     if (BooleanSetting.PERF_OVERLAY_SHOW_FPS.boolean) {
-                        sb.append(String.format("FPS:\u00A0%d", (perfStats[fps] + 0.5).toInt()))
+                        sb.append(fpsText)
                     }
 
                     if (BooleanSetting.PERF_OVERLAY_SHOW_FRAMETIME.boolean) {
                         if (sb.isNotEmpty()) sb.append(dividerString)
                         sb.append(
                             String.format(
-                                "Frame:\u00A0%.1fms (GPU: [CMD:\u00A0%.1fms SWP:\u00A0%.1fms] IPC:\u00A0%.1fms SVC:\u00A0%.1fms Rem:\u00A0%.1fms)",
-                                (perfStats[frametime] * 1000.0f).toFloat(),
-                                (perfStats[timeGpu] * 1000.0f).toFloat(),
-                                (perfStats[timeSwap] * 1000.0f).toFloat(),
-                                (perfStats[timeIpc] * 1000.0f).toFloat(),
-                                (perfStats[timeSvc] * 1000.0f).toFloat(),
-                                (perfStats[timeRem] * 1000.0f).toFloat()
+                                "Frame:\u00A0%.1fms",
+                                (perfStats[frametime] * 1000.0f).toFloat()
                             )
                         )
                     }
@@ -1665,6 +1659,20 @@ class EmulationFragment :
         } else {
             binding.performanceOverlayShowText.visibility = View.GONE
         }
+    }
+
+    private fun activeDriverLabel(): String {
+        val info = NativeLibrary.getActiveDriverInfo()
+        if (info.size != 3 || info[0].isBlank()) return "—"
+        val family = DriverSummary.family(info[1], info[2])
+        val name = when (family) {
+            "turnip" -> getString(R.string.performance_driver_turnip)
+            "qualcomm" -> getString(R.string.performance_driver_qualcomm)
+            "" -> getString(R.string.performance_driver_system)
+            else -> family
+        }
+        val version = DriverSummary.version(info[0], info[2])
+        return listOf(info[0], name, version).filter { it.isNotBlank() }.joinToString(" · ")
     }
 
     private fun processResidentMiB(): Long? = runCatching {

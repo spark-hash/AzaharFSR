@@ -1091,6 +1091,19 @@ void Java_org_citra_citra_1emu_NativeLibrary_reloadSettings([[maybe_unused]] JNI
     system.ApplySettings();
 }
 
+jobjectArray Java_org_citra_citra_1emu_NativeLibrary_getActiveDriverInfo(JNIEnv* env, jobject) {
+    const auto info = VideoCore::GetActiveDriverInfo();
+    const auto type = env->FindClass("java/lang/String");
+    const auto result = env->NewObjectArray(3, type, nullptr);
+    for (std::size_t i = 0; i < info.size(); ++i) {
+        const auto value = env->NewStringUTF(info[i].c_str());
+        env->SetObjectArrayElement(result, i, value);
+        env->DeleteLocalRef(value);
+    }
+    env->DeleteLocalRef(type);
+    return result;
+}
+
 jdoubleArray Java_org_citra_citra_1emu_NativeLibrary_getPerfStats(JNIEnv* env,
                                                                   [[maybe_unused]] jobject obj) {
     auto& core = Core::System::GetInstance();
@@ -1191,7 +1204,10 @@ Java_org_citra_citra_1emu_NativeLibrary_setLsfgShaderDirectory(JNIEnv* env, jcla
 }
 JNIEXPORT jdoubleArray JNICALL Java_org_citra_citra_1emu_NativeLibrary_getLsfgStats(JNIEnv* env,
                                                                                     jclass) {
-    const auto stats = Vulkan::GetLsfgStats();
+    const auto stats = Settings::GetWorkingGraphicsAPI() == Settings::GraphicsAPI::Vulkan
+                           ? Vulkan::GetLsfgStats()
+                           : std::array<double, 4>{
+                                 0, 0, 0, Settings::values.lsfg_mode.GetValue() == 0 ? 0.0 : 5.0};
     const auto result = env->NewDoubleArray(stats.size());
     env->SetDoubleArrayRegion(result, 0, stats.size(), stats.data());
     return result;

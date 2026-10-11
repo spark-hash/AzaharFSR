@@ -227,6 +227,7 @@ object NativeLibrary {
      * Returns the performance stats for the current game
      */
     external fun getPerfStats(): DoubleArray
+    external fun getActiveDriverInfo(): Array<String>
 
     /**
      * Notifies the core emulation that the layout should be updated

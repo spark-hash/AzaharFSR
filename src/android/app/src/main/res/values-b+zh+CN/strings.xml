@@ -833,7 +833,13 @@
     <string name="quickload_not_found">没有可用的快速保存。</string>
 
         <string name="performance_diagnostics">性能诊断</string>
-    <string name="performance_diagnostics_values">游戏 %1$.1f FPS · 系统 %2$.1f Hz\n模拟速度 %3$.0f%% · 帧处理 %4$.2f ms\nGPU 命令（CPU 耗时）%5$.2f ms\n呈现／等待 %6$.2f ms\nIPC %7$.2f · SVC %8$.2f · 其他 %9$.2f ms\n进程 RSS %10$s MiB · 可用 %11$d MiB\n电池 %12$.1f°C</string>
+    <string name="performance_diagnostics_values">%1$s\n模拟速度 %2$.0f%%\n内存 %3$s MB · 可用 %4$d MB · 电池 %5$.1f°C\nGPU %6$s</string>
+    <string name="performance_fps_simple">FPS %1$.0f</string>
+    <string name="performance_fps_generated">FPS %1$.0f → %2$.0f · 帧生成 2×</string>
+    <string name="performance_fps_generation_status">FPS %1$.0f · 帧生成：%2$s</string>
+    <string name="performance_driver_turnip">萝卜</string>
+    <string name="performance_driver_qualcomm">高通</string>
+    <string name="performance_driver_system">系统</string>
     <string name="fps_cheats_download">下载 60 帧金手指</string>
     <string name="fps_cheats_downloading">正在查询 FPS 数据库…</string>
     <string name="fps_cheats_finish_edit">请先保存或取消当前金手指编辑，再下载 FPS 代码。</string>

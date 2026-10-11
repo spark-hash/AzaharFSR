@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the misc/licenses/gplv2.txt file included.
 
+#include <mutex>
 #include "common/settings.h"
 #include "core/core.h"
 #include "core/frontend/emu_window.h"
@@ -11,11 +12,30 @@
 
 namespace VideoCore {
 
+namespace {
+std::mutex driver_info_mutex;
+std::array<std::string, 3> driver_info;
+} // namespace
+
+void SetActiveDriverInfo(std::array<std::string, 3> info) {
+    std::scoped_lock lock{driver_info_mutex};
+    driver_info = std::move(info);
+}
+
+std::array<std::string, 3> GetActiveDriverInfo() {
+    std::scoped_lock lock{driver_info_mutex};
+    return driver_info;
+}
+
 RendererBase::RendererBase(Core::System& system_, Frontend::EmuWindow& window,
                            Frontend::EmuWindow* secondary_window_)
-    : system{system_}, render_window{window}, secondary_window{secondary_window_} {}
+    : system{system_}, render_window{window}, secondary_window{secondary_window_} {
+    SetActiveDriverInfo({"", "", ""});
+}
 
-RendererBase::~RendererBase() = default;
+RendererBase::~RendererBase() {
+    SetActiveDriverInfo({"", "", ""});
+}
 
 u32 RendererBase::GetResolutionScaleFactor() {
     const auto graphics_api = Settings::GetWorkingGraphicsAPI();
