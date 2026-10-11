@@ -72,7 +72,9 @@ import org.citra.citra_emu.features.hotkeys.Hotkey
 import org.citra.citra_emu.features.settings.model.BooleanSetting
 import org.citra.citra_emu.features.settings.model.IntSetting
 import org.citra.citra_emu.features.settings.model.SettingsViewModel
+import org.citra.citra_emu.features.settings.ui.GameGraphicsActivity
 import org.citra.citra_emu.features.settings.ui.SettingsActivity
+import org.citra.citra_emu.features.settings.utils.GameSettingsStore
 import org.citra.citra_emu.features.settings.utils.SettingsFile
 import org.citra.citra_emu.model.Game
 import org.citra.citra_emu.utils.BuildUtil
@@ -196,7 +198,10 @@ class EmulationFragment :
 
         // So this fragment doesn't restart on configuration changes; i.e. rotation.
         retainInstance = true
-        emulationState = EmulationState(game.path)
+        emulationState = EmulationState(
+            game.path,
+            GameSettingsStore.id(game)
+        )
         screenAdjustmentUtil =
             ScreenAdjustmentUtil(requireContext(), requireActivity().windowManager, settings)
         EmulationLifecycleUtil.addPauseResumeHook(onPause)
@@ -401,11 +406,26 @@ class EmulationFragment :
                 }
 
                 R.id.menu_settings -> {
-                    SettingsActivity.launch(
-                        requireContext(),
-                        SettingsFile.FILE_NAME_CONFIG,
-                        ""
-                    )
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setItems(
+                            arrayOf(
+                                getString(R.string.game_graphics_settings),
+                                getString(R.string.game_global_settings)
+                            )
+                        ) { _, which ->
+                            if (which == 0) {
+                                GameGraphicsActivity.launch(
+                                    requireContext(),
+                                    game
+                                )
+                            } else {
+                                SettingsActivity.launch(
+                                    requireContext(),
+                                    SettingsFile.FILE_NAME_CONFIG,
+                                    ""
+                                )
+                            }
+                        }.show()
 
                     true
                 }
@@ -1674,7 +1694,7 @@ class EmulationFragment :
         ViewCompat.setOnApplyWindowInsetsListener(binding.inGameMenu, applyCutoutInsets)
     }
 
-    private class EmulationState(private val gamePath: String) {
+    private class EmulationState(private val gamePath: String, private val gameSettingsId: String) {
         private var state: State
         private var surface: Surface? = null
 
@@ -1790,7 +1810,7 @@ class EmulationFragment :
                 State.STOPPED -> {
                     Thread({
                         Log.debug("[EmulationFragment] Starting emulation thread.")
-                        NativeLibrary.run(gamePath)
+                        NativeLibrary.run(gamePath, gameSettingsId)
                     }, "NativeEmulation").start()
                 }
 

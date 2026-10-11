@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="game_graphics_settings">游戏独立图形设置</string>
+    <string name="game_global_settings">全局设置</string>
+    <string name="game_settings_hint">修改只保存到当前游戏，下次启动游戏时生效。未指定的选项继承全局设置。FSR 和抗锯齿需要 Vulkan；自定义驱动请先在全局 GPU 驱动管理中导入 ZIP，再在此选择。</string>
+    <string name="game_setting_use_global">继承全局设置</string>
+    <string name="game_setting_inherited">继承全局：%1$s</string>
+    <string name="game_setting_override">当前游戏：%1$s</string>
+    <string name="game_settings_reset">全部恢复为继承全局</string>
+    <string name="game_settings_reset_confirm">清除当前游戏的图形和驱动覆盖设置？全局设置和已安装的驱动将保留。</string>
+    <string name="game_settings_error">无法读写游戏设置：%1$s</string>
+    <string name="game_setting_number_error">请输入 %1$s 到 %2$s 之间的数值。</string>
+    <string name="game_setting_on">开启</string>
+    <string name="game_setting_off">关闭</string>
+    <string name="game_gpu_driver">GPU 驱动</string>
+    <string name="game_async_presentation">异步呈现</string>
+    <string name="game_driver_missing">驱动不可用</string>
+    <string name="game_driver_unsupported">当前设备不支持自定义 GPU 驱动。</string>
+    <string name="game_driver_fallback">当前游戏选择的驱动缺失或不兼容，本次使用系统驱动。</string>
+    <string name="game_skip_duplicate_frames">跳过重复帧</string>
+    <string name="game_second_screen_opacity">副屏透明度</string>
+    <string name="game_background_red">背景红色分量</string>
+    <string name="game_background_green">背景绿色分量</string>
+    <string name="game_background_blue">背景蓝色分量</string>
+</resources>

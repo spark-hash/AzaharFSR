@@ -101,6 +101,9 @@ std::atomic<bool> pause_emulation{false};
 
 std::mutex paused_mutex;
 std::mutex running_mutex;
+std::mutex game_config_mutex;
+std::string active_game_config_id;
+std::string active_game_config_text;
 std::condition_variable running_cv;
 
 // Guards the lifetime of s_surface/s_secondary_surface and the (re)creation of the
@@ -196,7 +199,8 @@ static bool CheckMicPermission() {
                                                                IDCache::GetRequestMicPermission());
 }
 
-static Core::System::ResultStatus RunCitra(const std::string& filepath) {
+static Core::System::ResultStatus RunCitra(const std::string& filepath,
+                                           const std::string& game_id) {
     // Citra core only supports a single running instance
     std::scoped_lock lock(running_mutex);
 
@@ -210,6 +214,45 @@ static Core::System::ResultStatus RunCitra(const std::string& filepath) {
     }
 
     Core::System& system{Core::System::GetInstance()};
+
+    {
+        std::scoped_lock config_lock(game_config_mutex);
+        active_game_config_id = game_id;
+        Config game_config{game_id};
+        active_game_config_text = game_config.GameConfigText();
+    }
+    SCOPE_EXIT({
+        TryShutdown();
+        std::scoped_lock config_lock(game_config_mutex);
+        active_game_config_id.clear();
+        active_game_config_text.clear();
+        Config{};
+    });
+    // Driver loading is serialized with the previous game's shutdown by running_mutex.
+    // It must happen before any Vulkan window or instance is constructed.
+    JNIEnv* env = IDCache::GetEnvForThread();
+    const auto prepare_driver = env->GetStaticMethodID(
+        IDCache::GetNativeLibraryClass(), "prepareGameDriver", "(Ljava/lang/String;Z)Z");
+    const auto j_game_id = ToJString(env, game_id);
+    const bool driver_ready =
+        prepare_driver &&
+        env->CallStaticBooleanMethod(IDCache::GetNativeLibraryClass(), prepare_driver, j_game_id,
+                                     static_cast<jboolean>(Settings::GetWorkingGraphicsAPI() ==
+                                                           Settings::GraphicsAPI::Vulkan));
+    env->DeleteLocalRef(j_game_id);
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+        LOG_ERROR(Frontend, "Game driver preparation raised an exception");
+        return Core::System::ResultStatus::ErrorLoader;
+    }
+    if (!driver_ready)
+        return Core::System::ResultStatus::ErrorLoader;
+    LOG_INFO(Frontend, "Loaded Android game graphics configuration {}", game_id);
+    if (Settings::values.graphics_api.GetValue() == Settings::GraphicsAPI::Vulkan &&
+        Settings::values.texture_filter.GetValue() == Settings::TextureFilter::Anime4K) {
+        Settings::values.texture_filter = Settings::TextureFilter::NoFilter;
+        LOG_WARNING(Frontend, "Anime4K is unavailable with Vulkan; using no texture filter");
+    }
 
     if (!inserted_cartridge.empty()) {
         system.InsertCartridge(inserted_cartridge);
@@ -285,9 +328,7 @@ static Core::System::ResultStatus RunCitra(const std::string& filepath) {
         break;
     }
 
-    // Forces a config reload on game boot, if the user changed settings in the UI
-    Config{};
-    // Replace with game-specific settings
+    // Per-game values were already applied before selecting the graphics backend above.
     u64 program_id{};
     FileUtil::SetCurrentRomPath(filepath);
     auto app_loader = Loader::GetLoader(filepath);
@@ -346,8 +387,6 @@ static Core::System::ResultStatus RunCitra(const std::string& filepath) {
 
     LoadDiskCacheProgress(VideoCore::LoadCallbackStage::Complete, 0, 0, "");
 
-    SCOPE_EXIT({ TryShutdown(); });
-
     system.RegisterCoreLoopThreadId();
 
     // Start running emulation
@@ -388,7 +427,7 @@ static Core::System::ResultStatus RunCitra(const std::string& filepath) {
     return Core::System::ResultStatus::Success;
 }
 
-void InitializeGpuDriver(const std::string& hook_lib_dir, const std::string& custom_driver_dir,
+bool InitializeGpuDriver(const std::string& hook_lib_dir, const std::string& custom_driver_dir,
                          const std::string& custom_driver_name,
                          const std::string& file_redirect_dir) {
 #if defined(ENABLE_VULKAN) && CITRA_ARCH(arm64)
@@ -409,6 +448,7 @@ void InitializeGpuDriver(const std::string& hook_lib_dir, const std::string& cus
             custom_driver_dir.c_str(), custom_driver_name.c_str(), file_redirect_dir_, nullptr);
     }
 
+    const bool loaded_requested_driver = custom_driver_name.empty() || handle != nullptr;
     // Try to load the system driver.
     if (!handle) {
         handle = adrenotools_open_libvulkan(RTLD_NOW, featureFlags, nullptr, hook_lib_dir.c_str(),
@@ -416,6 +456,9 @@ void InitializeGpuDriver(const std::string& hook_lib_dir, const std::string& cus
     }
 
     vulkan_library = std::make_shared<Common::DynamicLibrary>(handle);
+    return handle != nullptr && loaded_requested_driver;
+#else
+    return custom_driver_name.empty();
 #endif
 }
 
@@ -527,11 +570,12 @@ void Java_org_citra_citra_1emu_NativeLibrary_doFrame([[maybe_unused]] JNIEnv* en
     }
 }
 
-void JNICALL Java_org_citra_citra_1emu_NativeLibrary_initializeGpuDriver(
+jboolean JNICALL Java_org_citra_citra_1emu_NativeLibrary_initializeGpuDriver(
     JNIEnv* env, jobject obj, jstring hook_lib_dir, jstring custom_driver_dir,
     jstring custom_driver_name, jstring file_redirect_dir) {
-    InitializeGpuDriver(GetJString(env, hook_lib_dir), GetJString(env, custom_driver_dir),
-                        GetJString(env, custom_driver_name), GetJString(env, file_redirect_dir));
+    return InitializeGpuDriver(GetJString(env, hook_lib_dir), GetJString(env, custom_driver_dir),
+                               GetJString(env, custom_driver_name),
+                               GetJString(env, file_redirect_dir));
 }
 
 void Java_org_citra_citra_1emu_NativeLibrary_notifyOrientationChange([[maybe_unused]] JNIEnv* env,
@@ -1008,13 +1052,14 @@ void Java_org_citra_citra_1emu_NativeLibrary_logUserDirectory(JNIEnv* env,
 
 void Java_org_citra_citra_1emu_NativeLibrary_reloadSettings([[maybe_unused]] JNIEnv* env,
                                                             [[maybe_unused]] jobject obj) {
-    Config{};
     Core::System& system{Core::System::GetInstance()};
-
-    // Replace with game-specific settings
-    if (system.IsPoweredOn()) {
-        u64 program_id{};
-        system.GetAppLoader().ReadProgramId(program_id);
+    {
+        std::scoped_lock config_lock(game_config_mutex);
+        // Editing this game's overrides is explicitly deferred until its next launch.
+        const auto graphics_api = Settings::values.graphics_api.GetValue();
+        Config{active_game_config_id, &active_game_config_text};
+        if (system.IsPoweredOn())
+            Settings::values.graphics_api = graphics_api;
     }
 
     if (multiplayer) {
@@ -1045,9 +1090,8 @@ jdoubleArray Java_org_citra_citra_1emu_NativeLibrary_getPerfStats(JNIEnv* env,
     return j_stats;
 }
 
-void Java_org_citra_citra_1emu_NativeLibrary_run__Ljava_lang_String_2(JNIEnv* env,
-                                                                      [[maybe_unused]] jobject obj,
-                                                                      jstring j_path) {
+void Java_org_citra_citra_1emu_NativeLibrary_run(JNIEnv* env, [[maybe_unused]] jobject obj,
+                                                 jstring j_path, jstring j_game_id) {
     const std::string path = GetJString(env, j_path);
 
     if (!stop_run) {
@@ -1055,7 +1099,7 @@ void Java_org_citra_citra_1emu_NativeLibrary_run__Ljava_lang_String_2(JNIEnv* en
         running_cv.notify_all();
     }
 
-    const Core::System::ResultStatus result{RunCitra(path)};
+    const Core::System::ResultStatus result{RunCitra(path, GetJString(env, j_game_id))};
     if (result != Core::System::ResultStatus::Success) {
         env->CallStaticVoidMethod(IDCache::GetNativeLibraryClass(),
                                   IDCache::GetExitEmulationActivity(), static_cast<int>(result));

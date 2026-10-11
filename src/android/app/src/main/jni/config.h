@@ -13,16 +13,22 @@ class INIReader;
 class Config {
 private:
     std::unique_ptr<INIReader> android_config;
+    std::unique_ptr<INIReader> game_config;
+    std::string game_config_text;
     std::string android_config_loc;
 
     bool LoadINI(const std::string& default_contents = "", bool retry = true);
     void ReadValues();
+    INIReader& ReaderFor(const std::string& group, const std::string& key);
 
 public:
-    Config();
+    explicit Config(const std::string& game_id = {}, const std::string* game_ini = nullptr);
     ~Config();
 
     void Reload();
+    const std::string& GameConfigText() const {
+        return game_config_text;
+    }
 
 private:
     /**

@@ -17,6 +17,7 @@ import java.util.zip.ZipException
 import java.util.zip.ZipInputStream
 import org.citra.citra_emu.CitraApplication
 import org.citra.citra_emu.NativeLibrary
+import org.citra.citra_emu.features.settings.utils.GameSettingsStore
 import org.citra.citra_emu.utils.FileUtil.asDocumentFile
 import org.citra.citra_emu.utils.FileUtil.inputStream
 
@@ -25,6 +26,88 @@ object GpuDriverHelper {
     private var fileRedirectionPath: String? = null
     var driverInstallationPath: String? = null
     private var hookLibPath: String? = null
+
+    /** Called on the serialized emulation thread before constructing the renderer. */
+    fun initializeForGame(gameId: String): Boolean {
+        try {
+            val selection = GameSettingsStore.read(
+                gameId
+            )
+                .getOverride("GpuDriver", "selection")
+            if (selection == null) {
+                check(initializeDriverParameters())
+                return true
+            }
+            if (selection == "system") {
+                initializeSystemForGame()
+                return true
+            }
+            check(supportsCustomDriverLoading())
+            // Resolve only archives in the shared driver library, not an arbitrary persisted URI.
+            val archive =
+                driverStoragePath.listFiles().firstOrNull { it.uri.toString() == selection }
+                    ?: throw IOException("Selected driver archive is missing")
+            val metadata = getMetadataFromZip(archive.inputStream())
+            require(
+                metadata.name != null && !metadata.libraryName.isNullOrEmpty() &&
+                    metadata.minApi <= Build.VERSION.SDK_INT
+            )
+            val cacheRoot = File(
+                CitraApplication.appContext.filesDir,
+                "game_gpu_drivers"
+            ).canonicalFile
+            val fingerprint = java.security.MessageDigest.getInstance("SHA-256")
+                .digest((selection + archive.lastModified() + archive.length()).toByteArray())
+                .joinToString("") { "%02x".format(it) }
+            val cache = File(cacheRoot, fingerprint).canonicalFile
+            require(cache.parentFile == cacheRoot)
+            val library = File(cache, metadata.libraryName!!).canonicalFile
+            require(library.path.startsWith(cache.path + File.separator))
+            if (!library.isFile) {
+                cache.deleteRecursively()
+                check(cache.mkdirs())
+                try {
+                    archive.inputStream().use {
+                        FileUtil.unzipToInternalStorage(BufferedInputStream(it), cache)
+                    }
+                    check(library.isFile)
+                } catch (e: Exception) {
+                    cache.deleteRecursively()
+                    throw e
+                }
+            }
+            check(
+                NativeLibrary.initializeGpuDriver(
+                    hookLibPath,
+                    cache.path + "/",
+                    metadata.libraryName,
+                    fileRedirectionPath
+                )
+            )
+            return true
+        } catch (e: Exception) {
+            Log.error("[GpuDriverHelper] Per-game driver unavailable: ${e.message}")
+            return try {
+                initializeSystemForGame()
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    android.widget.Toast.makeText(
+                        CitraApplication.appContext,
+                        org.citra.citra_emu.R.string.game_driver_fallback,
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+                true
+            } catch (fallback: Exception) {
+                Log.error("[GpuDriverHelper] System driver preparation failed: ${fallback.message}")
+                false
+            }
+        }
+    }
+
+    private fun initializeSystemForGame() {
+        // Never delete or replace the user's globally installed driver.
+        check(NativeLibrary.initializeGpuDriver(hookLibPath, null, null, fileRedirectionPath))
+    }
 
     val driverStoragePath: DocumentFile
         get() {
@@ -40,7 +123,7 @@ object GpuDriverHelper {
             return driverDirectory!!
         }
 
-    fun initializeDriverParameters() {
+    fun initializeDriverParameters(): Boolean {
         try {
             // Initialize the file redirection directory.
             fileRedirectionPath =
@@ -60,7 +143,7 @@ object GpuDriverHelper {
         hookLibPath = CitraApplication.appContext.applicationInfo.nativeLibraryDir + "/"
 
         // Initialize GPU driver.
-        NativeLibrary.initializeGpuDriver(
+        return NativeLibrary.initializeGpuDriver(
             hookLibPath,
             driverInstallationPath,
             customDriverData.libraryName,

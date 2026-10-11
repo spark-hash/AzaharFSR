@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the misc/licenses/gplv2.txt file included.
 
+#include <algorithm>
 #include <iomanip>
 #include <memory>
 #include <ranges>
@@ -25,7 +26,7 @@
 #include "jni/default_ini.h"
 #include "jni/input_manager.h"
 
-Config::Config() {
+Config::Config(const std::string& game_id, const std::string* game_ini) {
     // TODO: Don't hardcode the path; let the frontend decide where to put the config files.
     android_config_loc = FileUtil::GetUserPath(FileUtil::UserPath::ConfigDir) + "config.ini";
     std::string ini_buffer;
@@ -34,7 +35,33 @@ Config::Config() {
         android_config = std::make_unique<INIReader>(ini_buffer.c_str(), ini_buffer.size());
     }
 
+    // A missing game file means inheritance, never a request to create default overrides.
+    if (!game_id.empty() && game_id.size() <= 65 &&
+        std::all_of(game_id.begin(), game_id.end(),
+                    [](char c) { return (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'); })) {
+        const auto path = FileUtil::GetUserPath(FileUtil::UserPath::ConfigDir) + "android_games/" +
+                          game_id + ".ini";
+        if (game_ini)
+            game_config_text = *game_ini;
+        else
+            FileUtil::ReadFileToString(true, path, game_config_text);
+        if (!game_config_text.empty()) {
+            auto reader =
+                std::make_unique<INIReader>(game_config_text.c_str(), game_config_text.size());
+            if (reader->ParseError() == 0)
+                game_config = std::move(reader);
+            else
+                LOG_WARNING(Config, "Ignoring malformed per-game configuration {}", path);
+        }
+    }
     Reload();
+}
+
+INIReader& Config::ReaderFor(const std::string& group, const std::string& key) {
+    const bool allowed = group == "Renderer" || group == "Utility" || group == "Layout" ||
+                         (group == "Debugging" && key == "renderer_debug");
+    return allowed && game_config && game_config->HasValue(group, key) ? *game_config
+                                                                       : *android_config;
 }
 
 Config::~Config() = default;
@@ -80,7 +107,7 @@ static const std::array<int, Settings::NativeAnalog::NumAnalogs> default_analogs
 template <>
 void Config::ReadSetting(const std::string& group, Settings::Setting<std::string>& setting) {
     std::string setting_value =
-        android_config->Get(group, setting.GetLabel(), setting.GetDefault());
+        ReaderFor(group, setting.GetLabel()).Get(group, setting.GetLabel(), setting.GetDefault());
     if (setting_value.empty()) {
         setting_value = setting.GetDefault();
     }
@@ -89,16 +116,19 @@ void Config::ReadSetting(const std::string& group, Settings::Setting<std::string
 
 template <>
 void Config::ReadSetting(const std::string& group, Settings::Setting<bool>& setting) {
-    setting = android_config->GetBoolean(group, setting.GetLabel(), setting.GetDefault());
+    setting = ReaderFor(group, setting.GetLabel())
+                  .GetBoolean(group, setting.GetLabel(), setting.GetDefault());
 }
 
 template <typename Type, bool ranged>
 void Config::ReadSetting(const std::string& group, Settings::Setting<Type, ranged>& setting) {
     if constexpr (std::is_floating_point_v<Type>) {
-        setting = android_config->GetReal(group, setting.GetLabel(), setting.GetDefault());
+        setting = ReaderFor(group, setting.GetLabel())
+                      .GetReal(group, setting.GetLabel(), setting.GetDefault());
     } else {
-        setting = static_cast<Type>(android_config->GetInteger(
-            group, setting.GetLabel(), static_cast<long>(setting.GetDefault())));
+        setting = static_cast<Type>(
+            ReaderFor(group, setting.GetLabel())
+                .GetInteger(group, setting.GetLabel(), static_cast<long>(setting.GetDefault())));
     }
 }
 
@@ -141,7 +171,8 @@ void Config::ReadValues() {
     // Renderer
     Settings::values.use_gles = android_config->GetBoolean("Renderer", "use_gles", true);
     Settings::values.shaders_accurate_mul =
-        android_config->GetBoolean("Renderer", "shaders_accurate_mul", false);
+        ReaderFor("Renderer", "shaders_accurate_mul")
+            .GetBoolean("Renderer", "shaders_accurate_mul", false);
     ReadSetting("Renderer", Settings::values.graphics_api);
     ReadSetting("Renderer", Settings::values.async_presentation);
     ReadSetting("Renderer", Settings::values.async_shader_compilation);
@@ -157,7 +188,7 @@ void Config::ReadValues() {
     ReadSetting("Renderer", Settings::values.texture_sampling);
     ReadSetting("Renderer", Settings::values.turbo_limit);
     // Workaround to map Android setting for enabling the frame limiter to the format Citra expects
-    if (android_config->GetBoolean("Renderer", "use_frame_limit", true)) {
+    if (ReaderFor("Renderer", "use_frame_limit").GetBoolean("Renderer", "use_frame_limit", true)) {
         ReadSetting("Renderer", Settings::values.frame_limit);
     } else {
         Settings::values.frame_limit = 0;
@@ -170,8 +201,8 @@ void Config::ReadValues() {
         default_shader = "Dubois (builtin)";
     else if (Settings::values.render_3d.GetValue() == Settings::StereoRenderOption::Interlaced)
         default_shader = "Horizontal (builtin)";
-    Settings::values.pp_shader_name =
-        android_config->GetString("Renderer", "pp_shader_name", default_shader);
+    Settings::values.pp_shader_name = ReaderFor("Renderer", "pp_shader_name")
+                                          .GetString("Renderer", "pp_shader_name", default_shader);
     ReadSetting("Renderer", Settings::values.filter_mode);
     ReadSetting("Renderer", Settings::values.anti_aliasing);
     ReadSetting("Renderer", Settings::values.fsr_enabled);

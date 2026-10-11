@@ -54,11 +54,13 @@ import org.citra.citra_emu.adapters.GameAdapter.GameViewHolder
 import org.citra.citra_emu.databinding.CardGameBinding
 import org.citra.citra_emu.databinding.DialogShortcutBinding
 import org.citra.citra_emu.features.cheats.ui.CheatsFragmentDirections
+import org.citra.citra_emu.features.settings.model.GameGraphicsConfig
 import org.citra.citra_emu.features.settings.model.GraphicsAPI
 import org.citra.citra_emu.features.settings.model.IntSetting
 import org.citra.citra_emu.features.settings.model.Settings
 import org.citra.citra_emu.features.settings.model.TextureFilter
-import org.citra.citra_emu.features.settings.utils.SettingsFile
+import org.citra.citra_emu.features.settings.ui.GameGraphicsActivity
+import org.citra.citra_emu.features.settings.utils.GameSettingsStore
 import org.citra.citra_emu.fragments.IndeterminateProgressDialogFragment
 import org.citra.citra_emu.model.Game
 import org.citra.citra_emu.utils.BuildUtil
@@ -121,21 +123,55 @@ class GameAdapter(
             return
         }
         lastClickTime = SystemClock.elapsedRealtime()
-
-        // NOTE: We could make this check not hardcoded, but it's a temp thing anyway so probs not worth. -OS
+        val holder = view.tag as GameViewHolder
+        val gameSettingsId = GameSettingsStore.id(
+            holder.game
+        )
+        val gameConfig = runCatching {
+            GameSettingsStore.read(gameSettingsId)
+        }.getOrDefault(GameGraphicsConfig())
+        val globalConfig = runCatching {
+            GameSettingsStore.global()
+        }.getOrDefault(GameGraphicsConfig())
         if (
-            IntSetting.GRAPHICS_API.int == GraphicsAPI.VULKAN.int &&
-            IntSetting.TEXTURE_FILTER.int == TextureFilter.ANIME4K.int
+            gameConfig.effective(
+                "Renderer",
+                IntSetting.GRAPHICS_API.key,
+                globalConfig,
+                IntSetting.GRAPHICS_API.defaultValue.toString()
+            ).toIntOrNull() ==
+            GraphicsAPI.VULKAN.int &&
+            gameConfig.effective(
+                "Renderer",
+                IntSetting.TEXTURE_FILTER.key,
+                globalConfig,
+                IntSetting.TEXTURE_FILTER.defaultValue.toString()
+            ).toIntOrNull() ==
+            TextureFilter.ANIME4K.int
         ) {
             MaterialAlertDialogBuilder(view.context)
                 .setTitle(R.string.incompatible_texture_filter)
                 .setMessage(R.string.incompatible_texture_filter_description)
                 .setPositiveButton(android.R.string.ok) { _: DialogInterface, _: Int ->
-                    IntSetting.TEXTURE_FILTER.int = TextureFilter.NOFILTER.int
-                    settings.saveSetting(
-                        IntSetting.TEXTURE_FILTER,
-                        SettingsFile.FILE_NAME_CONFIG
-                    )
+                    try {
+                        gameConfig.set(
+                            "Renderer",
+                            IntSetting.TEXTURE_FILTER.key,
+                            TextureFilter.NOFILTER.int.toString()
+                        )
+                        GameSettingsStore.save(
+                            gameSettingsId,
+                            gameConfig
+                        )
+                    } catch (e: Exception) {
+                        Toast.makeText(
+                            view.context,
+                            view.context.getString(R.string.game_settings_error, e.message),
+                            Toast.LENGTH_LONG
+                        ).show()
+                        return@setPositiveButton
+                    }
+                    lastClickTime = 0
                     this.onClick(view)
                 }
                 .setNegativeButton(android.R.string.cancel, null)
@@ -145,7 +181,6 @@ class GameAdapter(
             return
         }
 
-        val holder = view.tag as GameViewHolder
         gameExists(holder)
 
         val preferences =
@@ -524,6 +559,12 @@ class GameAdapter(
 
         val bottomSheetDialog = BottomSheetDialog(context)
         bottomSheetDialog.setContentView(bottomSheetView)
+        bottomSheetView.findViewById<MaterialButton>(
+            R.id.game_graphics_settings
+        ).setOnClickListener {
+            GameGraphicsActivity.launch(context, game)
+            bottomSheetDialog.dismiss()
+        }
 
         val insertable = game.isInsertable
         val inserted = insertable && (preferences.getString("insertedCartridge", "") == game.path)

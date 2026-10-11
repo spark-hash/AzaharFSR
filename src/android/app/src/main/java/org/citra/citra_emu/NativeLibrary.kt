@@ -172,7 +172,12 @@ object NativeLibrary {
     /**
      * Begins emulation.
      */
-    external fun run(path: String)
+    external fun run(path: String, gameSettingsId: String)
+
+    @Keep
+    @JvmStatic
+    fun prepareGameDriver(gameSettingsId: String, useVulkan: Boolean): Boolean =
+        !useVulkan || org.citra.citra_emu.utils.GpuDriverHelper.initializeForGame(gameSettingsId)
 
     // Surface Handling
     external fun surfaceChanged(surf: Surface)
@@ -228,7 +233,7 @@ object NativeLibrary {
         customDriverDir: String?,
         customDriverName: String?,
         fileRedirectDir: String?
-    )
+    ): Boolean
 
     external fun areKeysAvailable(): Boolean
 

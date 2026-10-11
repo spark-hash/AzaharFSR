@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="game_graphics_settings">Game graphics settings</string>
+    <string name="game_global_settings">Global settings</string>
+    <string name="game_settings_hint">Changes are saved for this game and take effect on its next launch. Unspecified options follow global settings. FSR and anti-aliasing require Vulkan. Install driver ZIPs in the global GPU driver manager before selecting them here.</string>
+    <string name="game_setting_use_global">Use global setting</string>
+    <string name="game_setting_inherited">Global: %1$s</string>
+    <string name="game_setting_override">This game: %1$s</string>
+    <string name="game_settings_reset">Restore all global settings</string>
+    <string name="game_settings_reset_confirm">Remove this game’s graphics and driver overrides? Global settings and driver installations will be kept.</string>
+    <string name="game_settings_error">Could not access game settings: %1$s</string>
+    <string name="game_setting_number_error">Enter a number between %1$s and %2$s.</string>
+    <string name="game_setting_on">On</string>
+    <string name="game_setting_off">Off</string>
+    <string name="game_gpu_driver">GPU driver</string>
+    <string name="game_async_presentation">Asynchronous presentation</string>
+    <string name="game_driver_missing">Driver unavailable</string>
+    <string name="game_driver_unsupported">This device does not support custom GPU drivers.</string>
+    <string name="game_driver_fallback">The selected game driver is unavailable or incompatible. Using the system driver for this session.</string>
+    <string name="game_skip_duplicate_frames">Skip duplicate frames</string>
+    <string name="game_second_screen_opacity">Second screen opacity</string>
+    <string name="game_background_red">Background red</string>
+    <string name="game_background_green">Background green</string>
+    <string name="game_background_blue">Background blue</string>
+</resources>
