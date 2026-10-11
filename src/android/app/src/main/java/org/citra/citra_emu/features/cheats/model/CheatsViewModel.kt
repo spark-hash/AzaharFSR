@@ -48,6 +48,7 @@ class CheatsViewModel : ViewModel() {
     private val _detailsViewFocusChange = MutableStateFlow(false)
 
     private var titleId: Long = 0
+    val currentTitleId: Long get() = titleId
     lateinit var cheats: Array<Cheat>
     private var cheatsNeedSaving = false
     private var selectedCheatPosition = -1
@@ -73,6 +74,28 @@ class CheatsViewModel : ViewModel() {
             CheatEngine.saveCheatFile(titleId)
             cheatsNeedSaving = false
         }
+    }
+
+    /** Append or reuse a code without replacing existing cheats or changing their enabled states. */
+    fun importFpsCheat(expectedTitleId: Long, downloaded: FpsCheatDownload, enable: Boolean) {
+        check(expectedTitleId == titleId && !isEditing.value)
+        check(Cheat.isValidGatewayCode(downloaded.code) == 0)
+        val existing = cheats.indexOfFirst {
+            FpsCheatParser.normalizedCode(it.getCode()) == downloaded.code
+        }
+        val position = if (existing >= 0) {
+            existing
+        } else {
+            val cheat = Cheat.createGatewayCode(downloaded.name, downloaded.notes, downloaded.code)
+            CheatEngine.addCheat(cheat)
+            cheatsNeedSaving = true
+            load()
+            cheats.lastIndex
+        }
+        if (enable) cheats[position].setEnabled(true)
+        saveIfNeeded()
+        setSelectedCheat(cheats[position], position)
+        openDetailsView()
     }
 
     fun setSelectedCheat(cheat: Cheat?, position: Int) {

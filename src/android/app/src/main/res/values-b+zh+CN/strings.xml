@@ -834,4 +834,13 @@
 
         <string name="performance_diagnostics">性能诊断</string>
     <string name="performance_diagnostics_values">游戏 %1$.1f FPS · 系统 %2$.1f Hz\n模拟速度 %3$.0f%% · 帧处理 %4$.2f ms\nGPU 命令（CPU 耗时）%5$.2f ms\n呈现／等待 %6$.2f ms\nIPC %7$.2f · SVC %8$.2f · 其他 %9$.2f ms\n进程 RSS %10$s MiB · 可用 %11$d MiB\n电池 %12$.1f°C</string>
+    <string name="fps_cheats_download">下载 60 帧金手指</string>
+    <string name="fps_cheats_downloading">正在查询 FPS 数据库…</string>
+    <string name="fps_cheats_finish_edit">请先保存或取消当前金手指编辑，再下载 FPS 代码。</string>
+    <string name="fps_cheats_not_found">此数据库没有找到 Title ID %1$s 对应的可用 60 帧代码。可能尚未收录，或代码需要暂不支持的 CTRPF 指令。</string>
+    <string name="fps_cheats_found">60 帧代码 · %1$s</string>
+    <string name="fps_cheats_download_failed">无法下载 FPS 数据库，请检查网络后重试。GitHub 也可能暂时限制请求。</string>
+    <string name="fps_cheats_preview">仅匹配 Title ID，尚未验证游戏更新版本。请根据代码名称选择对应版本。同一时间只启用一个 FPS 代码。部分代码可能导致游戏加速或异常；关闭代码后，可能需要重启游戏才能恢复已修改的内存。\n\n%1$s\n\n%2$s</string>
+    <string name="fps_cheats_import_enable">导入并启用</string>
+    <string name="fps_cheats_import_only">仅导入</string>
 </resources>

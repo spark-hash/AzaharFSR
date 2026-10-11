@@ -1132,4 +1132,13 @@
 
     <string name="performance_diagnostics">Performance diagnostics</string>
     <string name="performance_diagnostics_values">Game %1$.1f FPS · System %2$.1f Hz\nSpeed %3$.0f%% · Active frame %4$.2f ms\nGPU commands (CPU) %5$.2f ms\nPresent / wait %6$.2f ms\nIPC %7$.2f · SVC %8$.2f · Other %9$.2f ms\nProcess RSS %10$s MiB · Free %11$d MiB\nBattery %12$.1f°C</string>
+    <string name="fps_cheats_download">Download 60 FPS cheats</string>
+    <string name="fps_cheats_downloading">Searching FPS database…</string>
+    <string name="fps_cheats_finish_edit">Save or cancel your current cheat edit before downloading FPS cheats.</string>
+    <string name="fps_cheats_not_found">No supported 60 FPS code found for Title ID %1$s in this database. The game may be missing, or its codes may require unsupported CTRPF instructions.</string>
+    <string name="fps_cheats_found">60 FPS codes · %1$s</string>
+    <string name="fps_cheats_download_failed">Could not download the FPS database. Check your connection and try again. GitHub may also temporarily limit requests.</string>
+    <string name="fps_cheats_preview">Matched by Title ID only; the installed game update version has not been verified. Choose the matching version in the code name. Enable only one FPS code at a time. Some codes change game speed or cause glitches; disabling a code may require restarting the game to restore patched memory.\n\n%1$s\n\n%2$s</string>
+    <string name="fps_cheats_import_enable">Import and enable</string>
+    <string name="fps_cheats_import_only">Import only</string>
 </resources>

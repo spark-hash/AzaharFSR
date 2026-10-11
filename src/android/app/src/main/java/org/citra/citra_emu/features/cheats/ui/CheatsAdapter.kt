@@ -53,6 +53,7 @@ class CheatsAdapter(
             this.cheat = cheat
             this.position = position
             binding.textName.text = this.cheat.getName()
+            binding.cheatSwitch.setOnCheckedChangeListener(null)
             binding.cheatSwitch.isChecked = this.cheat.getEnabled()
             binding.cheatContainer.setOnClickListener(this)
             binding.cheatSwitch.setOnCheckedChangeListener(this)
