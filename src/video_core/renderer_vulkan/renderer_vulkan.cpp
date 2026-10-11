@@ -1016,6 +1016,12 @@ void RendererVulkan::DrawBottomScreen(const Layout::FramebufferLayout& layout,
 void RendererVulkan::DrawScreens(Frame* frame, const Layout::FramebufferLayout& layout,
                                  bool flipped) {
     const auto original_screens = screen_infos;
+    // Presentation stores the rotated guest coordinates as (v, u). Compute passes
+    // sample the unrotated texture, so their crop rectangle must use (u, v).
+    const auto texture_crop = [](const ScreenInfo& screen) {
+        const auto& uv = screen.texcoords;
+        return Common::Rectangle<f32>{uv.top, uv.left, uv.bottom, uv.right};
+    };
     const auto aa_mode = Settings::values.anti_aliasing.GetValue();
     if (aa_mode != 0) {
         renderpass_cache.EndRendering();
@@ -1032,7 +1038,7 @@ void RendererVulkan::DrawScreens(Frame* frame, const Layout::FramebufferLayout& 
             const u32 height = screen.texture.height * scale;
             if (!enabled || !screen.image_view || width < 2 || height < 2)
                 continue;
-            const auto view = antialiasing->Apply(index, screen.image_view, screen.texcoords, width,
+            const auto view = antialiasing->Apply(index, screen.image_view, texture_crop(screen), width,
                                                   height, aa_mode);
             if (view) {
                 screen.image_view = view;
@@ -1072,7 +1078,7 @@ void RendererVulkan::DrawScreens(Frame* frame, const Layout::FramebufferLayout& 
                 width < input_width || height < input_height ||
                 (width == input_width && height == input_height) || width < 2 || height < 2)
                 continue;
-            const auto view = fsr->Apply(index, screen.image_view, screen.texcoords, width, height,
+            const auto view = fsr->Apply(index, screen.image_view, texture_crop(screen), width, height,
                                          Settings::values.fsr_sharpness.GetValue() / 100.0f);
             if (view) {
                 screen.image_view = view;
