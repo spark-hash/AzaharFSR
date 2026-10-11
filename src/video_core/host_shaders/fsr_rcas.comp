@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+#version 450
+#define A_GPU 1
+#define A_GLSL 1
+// FFX_A
+layout(local_size_x=8, local_size_y=8) in;
+layout(binding=0) uniform sampler2D source;
+layout(binding=1, rgba8) writeonly uniform image2D target;
+layout(push_constant) uniform Parameters { vec4 crop; vec2 output_size; float sharpness; } params;
+AF4 FsrRcasLoadF(ASU2 p) {
+    return texelFetch(source, clamp(p, ivec2(0), textureSize(source, 0) - 1), 0);
+}
+void FsrRcasInputF(inout AF1 r, inout AF1 g, inout AF1 b) {}
+#define FSR_RCAS_F 1
+// FFX_FSR1
+void main() {
+    uvec2 p = gl_GlobalInvocationID.xy;
+    if (any(greaterThanEqual(p, uvec2(params.output_size)))) return;
+    uvec4 c;
+    FsrRcasCon(c, params.sharpness);
+    vec3 rgb;
+    FsrRcasF(rgb.r, rgb.g, rgb.b, p, c);
+    imageStore(target, ivec2(p), vec4(rgb, 1.0));
+}

@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="fsr_enabled">FSR 1 (Vulkan)</string>
+    <string name="fsr_description">Upscale and sharpen each screen using AMD FSR 1. Requires Vulkan and an internal resolution below the displayed screen size.</string>
+    <string name="fsr_sharpness">FSR sharpness</string>
+    <string name="fsr_sharpness_description">Higher values increase sharpening after FSR upscaling.</string>
 
     <!-- General application strings -->
     <string name="app_name" translatable="false">Azahar</string>

@@ -1016,6 +1016,27 @@ class SettingsFragmentPresenter(private val fragmentView: SettingsFragmentView) 
             )
             add(
                 SwitchSetting(
+                    BooleanSetting.FSR_ENABLED,
+                    R.string.fsr_enabled,
+                    R.string.fsr_description,
+                    BooleanSetting.FSR_ENABLED.key,
+                    BooleanSetting.FSR_ENABLED.defaultValue
+                )
+            )
+            add(
+                SliderSetting(
+                    IntSetting.FSR_SHARPNESS,
+                    R.string.fsr_sharpness,
+                    R.string.fsr_sharpness_description,
+                    0,
+                    100,
+                    "%",
+                    IntSetting.FSR_SHARPNESS.key,
+                    IntSetting.FSR_SHARPNESS.defaultValue.toFloat()
+                )
+            )
+            add(
+                SwitchSetting(
                     BooleanSetting.SHADERS_ACCURATE_MUL,
                     R.string.shaders_accurate_mul,
                     R.string.shaders_accurate_mul_description,

@@ -161,6 +161,8 @@ if (ENABLE_VULKAN)
         renderer_vulkan/renderer_vulkan.cpp
         renderer_vulkan/renderer_vulkan.h
         renderer_vulkan/vk_blit_helper.cpp
+        renderer_vulkan/vk_fsr.cpp
+        renderer_vulkan/vk_fsr.h
         renderer_vulkan/vk_blit_helper.h
         renderer_vulkan/vk_common.cpp
         renderer_vulkan/vk_common.h

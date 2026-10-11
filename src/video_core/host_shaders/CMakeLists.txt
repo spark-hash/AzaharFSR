@@ -3,6 +3,8 @@
 # Refer to the license.txt file included.
 
 set(SHADER_FILES
+    fsr_easu.comp
+    fsr_rcas.comp
     format_reinterpreter/d24s8_to_rgba8.frag
     format_reinterpreter/rgba4_to_rgb5a1.frag
     format_reinterpreter/vulkan_d24s8_to_rgba8.comp
@@ -51,6 +53,15 @@ foreach(FILENAME IN ITEMS ${SHADER_FILES})
             # HEADER_GENERATOR should be included here but msbuild seems to assume it's always modified
     )
     set(SHADER_HEADERS ${SHADER_HEADERS} ${SOURCE_HEADER_FILE})
+endforeach()
+
+foreach(FSR_HEADER ffx_a.h ffx_fsr1.h)
+    set(SOURCE_FILE ${PROJECT_SOURCE_DIR}/externals/fsr1/${FSR_HEADER})
+    set(SOURCE_HEADER_FILE ${SHADER_DIR}/${FSR_HEADER})
+    add_custom_command(OUTPUT ${SOURCE_HEADER_FILE}
+        COMMAND ${CMAKE_COMMAND} -P ${HEADER_GENERATOR} ${SOURCE_FILE} ${SOURCE_HEADER_FILE} ${INPUT_FILE}
+        DEPENDS ${SOURCE_FILE} ${INPUT_FILE} ${HEADER_GENERATOR})
+    list(APPEND SHADER_HEADERS ${SOURCE_HEADER_FILE})
 endforeach()
 
 set(SHADER_SOURCES ${SHADER_FILES})

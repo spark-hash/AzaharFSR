@@ -21,6 +21,8 @@ ConfigureEnhancements::ConfigureEnhancements(QWidget* parent)
     const auto graphics_api = Settings::GetWorkingGraphicsAPI();
     const bool res_scale_enabled = graphics_api != Settings::GraphicsAPI::Software;
     ui->resolution_factor_combobox->setEnabled(res_scale_enabled);
+    ui->toggle_fsr->setEnabled(ui->toggle_fsr->isEnabled() &&
+                              graphics_api == Settings::GraphicsAPI::Vulkan);
 
     connect(ui->render_3d_combobox, qOverload<int>(&QComboBox::currentIndexChanged), this,
             [this](int currentIndex) {
@@ -63,6 +65,11 @@ void ConfigureEnhancements::SetConfiguration() {
         static_cast<int>(Settings::values.mono_render_option.GetValue()));
     updateShaders(Settings::values.render_3d.GetValue());
     ui->toggle_linear_filter->setChecked(Settings::values.filter_mode.GetValue());
+    ui->toggle_fsr->setChecked(Settings::values.fsr_enabled.GetValue());
+    ui->fsr_sharpness->setCurrentIndex(Settings::IsConfiguringGlobal()
+        ? Settings::values.fsr_sharpness.GetValue() / 25
+        : (Settings::values.fsr_sharpness.UsingGlobal() ? 0
+            : Settings::values.fsr_sharpness.GetValue() / 25 + ConfigurationShared::USE_GLOBAL_OFFSET));
     ui->use_integer_scaling->setChecked(Settings::values.use_integer_scaling.GetValue());
     ui->toggle_dump_textures->setChecked(Settings::values.dump_textures.GetValue());
     ui->toggle_custom_textures->setChecked(Settings::values.custom_textures.GetValue());
@@ -128,6 +135,10 @@ void ConfigureEnhancements::ApplyConfiguration() {
 
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.filter_mode,
                                              ui->toggle_linear_filter, linear_filter);
+    ConfigurationShared::ApplyPerGameSetting(&Settings::values.fsr_enabled,
+                                             ui->toggle_fsr, fsr_enabled);
+    ConfigurationShared::ApplyPerGameSetting(&Settings::values.fsr_sharpness,
+                                             ui->fsr_sharpness, [](int index) { return index * 25; });
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_integer_scaling,
                                              ui->use_integer_scaling, use_integer_scaling);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.texture_filter,
@@ -151,6 +162,8 @@ void ConfigureEnhancements::SetupPerGameUI() {
         ui->widget_resolution->setEnabled(Settings::values.resolution_factor.UsingGlobal());
         ui->widget_texture_filter->setEnabled(Settings::values.texture_filter.UsingGlobal());
         ui->toggle_linear_filter->setEnabled(Settings::values.filter_mode.UsingGlobal());
+        ui->toggle_fsr->setEnabled(Settings::values.fsr_enabled.UsingGlobal());
+        ui->fsr_sharpness->setEnabled(Settings::values.fsr_sharpness.UsingGlobal());
         ui->use_integer_scaling->setEnabled(Settings::values.use_integer_scaling.UsingGlobal());
         ui->toggle_dump_textures->setEnabled(Settings::values.dump_textures.UsingGlobal());
         ui->toggle_custom_textures->setEnabled(Settings::values.custom_textures.UsingGlobal());
@@ -170,6 +183,10 @@ void ConfigureEnhancements::SetupPerGameUI() {
 
     ConfigurationShared::SetColoredTristate(ui->toggle_linear_filter, Settings::values.filter_mode,
                                             linear_filter);
+    ConfigurationShared::SetColoredTristate(ui->toggle_fsr, Settings::values.fsr_enabled,
+                                            fsr_enabled);
+    ConfigurationShared::InsertGlobalItem(ui->fsr_sharpness,
+        Settings::values.fsr_sharpness.GetValue(true) / 25);
     ConfigurationShared::SetColoredTristate(
         ui->use_integer_scaling, Settings::values.use_integer_scaling, use_integer_scaling);
     ConfigurationShared::SetColoredTristate(ui->toggle_dump_textures,

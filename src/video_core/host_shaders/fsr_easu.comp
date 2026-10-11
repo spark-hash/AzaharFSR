@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+#version 450
+#define A_GPU 1
+#define A_GLSL 1
+// FFX_A
+layout(local_size_x=8, local_size_y=8) in;
+layout(binding=0) uniform sampler2D source;
+layout(binding=1, rgba8) writeonly uniform image2D target;
+layout(push_constant) uniform Parameters { vec4 crop; vec2 output_size; float sharpness; } params;
+vec2 ClampGather(vec2 p) {
+    vec2 size = vec2(textureSize(source, 0));
+    vec2 middle = (params.crop.xy + params.crop.zw) * 0.5;
+    return clamp(p, min(params.crop.xy + 1.0 / size, middle),
+                    max(params.crop.zw - 1.0 / size, middle));
+}
+AF4 FsrEasuRF(AF2 p) { return textureGather(source, ClampGather(p), 0); }
+AF4 FsrEasuGF(AF2 p) { return textureGather(source, ClampGather(p), 1); }
+AF4 FsrEasuBF(AF2 p) { return textureGather(source, ClampGather(p), 2); }
+#define FSR_EASU_F 1
+// FFX_FSR1
+void main() {
+    uvec2 p = gl_GlobalInvocationID.xy;
+    if (any(greaterThanEqual(p, uvec2(params.output_size)))) return;
+    vec2 size = vec2(textureSize(source, 0));
+    vec2 viewport = (params.crop.zw - params.crop.xy) * size;
+    uvec4 c0, c1, c2, c3;
+    FsrEasuConOffset(c0, c1, c2, c3, viewport.x, viewport.y, size.x, size.y,
+                    params.output_size.x, params.output_size.y,
+                    params.crop.x * size.x, params.crop.y * size.y);
+    vec3 rgb;
+    FsrEasuF(rgb, p, c0, c1, c2, c3);
+    imageStore(target, ivec2(p), vec4(rgb, 1.0));
+}

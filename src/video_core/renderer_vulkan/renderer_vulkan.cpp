@@ -12,6 +12,7 @@
 #include "video_core/gpu.h"
 #include "video_core/pica/pica_core.h"
 #include "video_core/renderer_vulkan/renderer_vulkan.h"
+#include "video_core/renderer_vulkan/vk_fsr.h"
 #include "video_core/renderer_vulkan/vk_memory_util.h"
 #include "video_core/renderer_vulkan/vk_shader_util.h"
 
@@ -1013,6 +1014,47 @@ void RendererVulkan::DrawBottomScreen(const Layout::FramebufferLayout& layout,
 
 void RendererVulkan::DrawScreens(Frame* frame, const Layout::FramebufferLayout& layout,
                                  bool flipped) {
+    const auto original_screens = screen_infos;
+    if (Settings::values.fsr_enabled.GetValue()) {
+        renderpass_cache.EndRendering();
+        if (!fsr)
+            fsr = std::make_unique<Fsr>(instance, scheduler, update_queue);
+        for (u32 index = 0; index < screen_infos.size(); ++index) {
+            auto& screen = screen_infos[index];
+            const auto& rectangle = index == 2 ? layout.bottom_screen : layout.top_screen;
+            bool enabled = index == 2 ? layout.bottom_screen_enabled : layout.top_screen_enabled;
+            u32 width = layout.is_rotated ? rectangle.GetWidth() : rectangle.GetHeight();
+            u32 height = layout.is_rotated ? rectangle.GetHeight() : rectangle.GetWidth();
+            if (layout.additional_screen_enabled &&
+                layout.additional_screen_is_bottom == (index == 2)) {
+                enabled = true;
+                const auto& additional = layout.additional_screen;
+                width = std::max(width, layout.is_rotated ? additional.GetWidth()
+                                                          : additional.GetHeight());
+                height = std::max(height, layout.is_rotated ? additional.GetHeight()
+                                                            : additional.GetWidth());
+            }
+            if (layout.render_3d_mode == Settings::StereoRenderOption::SideBySide) {
+                if (layout.is_rotated)
+                    width /= 2;
+                else
+                    height /= 2;
+            }
+            const auto scale = GetResolutionScaleFactor();
+            const u32 input_width = screen.texture.width * scale;
+            const u32 input_height = screen.texture.height * scale;
+            if (!enabled || !screen.image_view || input_width < 2 || input_height < 2 ||
+                width < input_width || height < input_height ||
+                (width == input_width && height == input_height) || width < 2 || height < 2)
+                continue;
+            const auto view = fsr->Apply(index, screen.image_view, screen.texcoords, width, height,
+                                         Settings::values.fsr_sharpness.GetValue() / 100.0f);
+            if (view) {
+                screen.image_view = view;
+                screen.texcoords = {0.f, 0.f, 1.f, 1.f};
+            }
+        }
+    }
     if (settings.bg_color_update_requested.exchange(false)) {
         clear_color.float32[0] = Settings::values.bg_red.GetValue();
         clear_color.float32[1] = Settings::values.bg_green.GetValue();
@@ -1061,6 +1103,7 @@ void RendererVulkan::DrawScreens(Frame* frame, const Layout::FramebufferLayout& 
     DrawCursor(layout);
 
     scheduler.Record([](vk::CommandBuffer cmdbuf) { cmdbuf.endRenderPass(); });
+    screen_infos = original_screens;
 }
 
 void RendererVulkan::DrawCursor(const Layout::FramebufferLayout& layout) {

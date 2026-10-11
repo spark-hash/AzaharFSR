@@ -205,6 +205,13 @@ static const char* android_config_default_file_content = (BOOST_HANA_STRING(R"(
 # 0: Nearest, 1 (default): Linear
 )") DECLARE_KEY(filter_mode) BOOST_HANA_STRING(R"(
 
+# Enable spatial FSR 1 EASU and RCAS in Vulkan when enlarging a screen.
+# 0 (default): Disabled, 1: Enabled
+)") DECLARE_KEY(fsr_enabled) BOOST_HANA_STRING(R"(
+
+# FSR sharpening strength, 0 to 100 (default 50).
+)") DECLARE_KEY(fsr_sharpness) BOOST_HANA_STRING(R"(
+
 # Delays the game render thread by the specified amount of microseconds
 # Set to 0 for no delay, only useful in dynamic-fps games to simulate GPU delay.
 )") DECLARE_KEY(delay_game_render_thread_us) BOOST_HANA_STRING(R"(

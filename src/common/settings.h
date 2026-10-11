@@ -624,6 +624,8 @@ struct Values {
     Setting<s32> cardboard_y_shift{0, Keys::cardboard_y_shift};
 
     SwitchableSetting<bool> filter_mode{true, Keys::filter_mode};
+    SwitchableSetting<bool> fsr_enabled{false, Keys::fsr_enabled};
+    SwitchableSetting<u32, true> fsr_sharpness{50, 0, 100, Keys::fsr_sharpness};
     SwitchableSetting<std::string> pp_shader_name{"None (builtin)", Keys::pp_shader_name};
     SwitchableSetting<std::string> anaglyph_shader_name{"Dubois (builtin)",
                                                         Keys::anaglyph_shader_name};

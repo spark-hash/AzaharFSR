@@ -165,6 +165,21 @@
        </widget>
       </item>
       <item>
+       <widget class="QCheckBox" name="toggle_fsr">
+        <property name="text"><string>Enable FSR 1 (Vulkan)</string></property>
+        <property name="toolTip"><string>Upscale each screen with AMD FSR 1 and sharpen it. Use a lower internal resolution than the displayed screen. Requires Vulkan.</string></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="fsr_sharpness">
+        <item><property name="text"><string>FSR Sharpness: 0%</string></property></item>
+        <item><property name="text"><string>FSR Sharpness: 25%</string></property></item>
+        <item><property name="text"><string>FSR Sharpness: 50%</string></property></item>
+        <item><property name="text"><string>FSR Sharpness: 75%</string></property></item>
+        <item><property name="text"><string>FSR Sharpness: 100%</string></property></item>
+       </widget>
+      </item>
+      <item>
        <widget class="QWidget" name="widget_shader" native="true">
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <property name="leftMargin">

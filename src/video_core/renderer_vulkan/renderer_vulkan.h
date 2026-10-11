@@ -54,6 +54,8 @@ struct ScreenInfo {
     vk::ImageView image_view;
 };
 
+class Fsr;
+
 struct PresentUniformData {
     std::array<f32, 4 * 4> modelview;
     Common::Vec4f i_resolution;
@@ -135,6 +137,7 @@ private:
     RasterizerVulkan rasterizer;
     std::unique_ptr<PresentWindow> secondary_present_window_ptr;
     DescriptorHeap present_heap;
+    std::unique_ptr<Fsr> fsr;
     vk::UniquePipelineLayout present_pipeline_layout;
     std::array<vk::Pipeline, PRESENT_PIPELINES> present_pipelines;
     std::array<vk::ShaderModule, PRESENT_PIPELINES> present_shaders;
