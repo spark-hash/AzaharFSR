@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include <string>
-#include <vk_mem_alloc.h>
 #include "common/logging/log.h"
 #include "video_core/host_shaders/anime4k_enlarge_comp.h"
 #include "video_core/host_shaders/anime4k_refine_comp.h"
@@ -13,6 +12,9 @@
 #include "video_core/renderer_vulkan/vk_instance.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_shader_util.h"
+
+// vk_common.h must enable beta extensions before VMA includes Vulkan C headers.
+#include <vk_mem_alloc.h>
 
 namespace Vulkan {
 namespace {
