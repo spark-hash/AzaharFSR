@@ -1764,7 +1764,12 @@ class EmulationFragment :
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
-        LsfgDisplay.update(holder.surface, binding.surfaceEmulation.display, false)
+        LsfgDisplay.update(
+            holder.surface,
+            binding.surfaceEmulation.display,
+            false,
+            emulationActivity.window
+        )
         Log.debug("[EmulationFragment] Surface changed. Resolution: " + width + "x" + height)
         emulationState.newSurface(holder.surface)
     }
@@ -1780,7 +1785,8 @@ class EmulationFragment :
                 LsfgDisplay.update(
                     binding.surfaceEmulation.holder.surface,
                     binding.surfaceEmulation.display,
-                    false
+                    false,
+                    emulationActivity.window
                 )
                 emulationActivity.secondaryDisplayManager.updateRefreshRate()
             }

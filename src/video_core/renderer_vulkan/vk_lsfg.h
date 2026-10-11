@@ -40,5 +40,6 @@ private:
     bool main_window;
     std::string asset_path;
     std::chrono::steady_clock::time_point previous{};
+    u64 previous_emulated_us{};
 };
 } // namespace Vulkan

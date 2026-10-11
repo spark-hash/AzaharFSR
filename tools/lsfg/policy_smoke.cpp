@@ -16,11 +16,11 @@ int main() {
     check(LsfgMultiplier(1, 120, 1.0 / 60) == 1);
     check(LsfgMultiplier(2, 120, 1.0 / 30) == 4);
     check(LsfgMultiplier(2, 120, 1.0 / 60) == 2);
-    check(LsfgMultiplier(2, 60, 1.0 / 30) == 2);
-    check(LsfgMultiplier(2, 60, 1.0 / 60) == 1);
-    check(LsfgMultiplier(2, 90, 1.0 / 30) == 3);
+    check(LsfgMultiplier(2, 60, 1.0 / 30) == 4);
+    check(LsfgMultiplier(2, 60, 1.0 / 60) == 2);
+    check(LsfgMultiplier(2, 90, 1.0 / 30) == 4);
     check(LsfgMultiplier(2, 144, 1.0 / 30) == 4);
-    check(LsfgMultiplier(2, 59.94, 1.0 / 30) == 2);
+    check(LsfgMultiplier(2, 59.94, 1.0 / 30) == 4);
     check(LsfgMultiplier(2, 119.88, 1.0 / 60) == 2);
     check(LsfgMultiplier(2, std::numeric_limits<double>::quiet_NaN(), 1.0 / 30) == 1);
     check(LsfgSpacing(4, 120, 0.028) >= 1.0 / 120);

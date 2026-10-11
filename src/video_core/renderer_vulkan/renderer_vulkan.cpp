@@ -8,6 +8,7 @@
 #include "common/microprofile.h"
 #include "common/settings.h"
 #include "core/core.h"
+#include "core/core_timing.h"
 #include "core/frontend/emu_window.h"
 #include "video_core/gpu.h"
 #include "video_core/pica/pica_core.h"
@@ -128,8 +129,8 @@ RendererVulkan::RendererVulkan(Core::System& system, Pica::PicaCore& pica_,
                                          update_queue,
                                          main_present_window.ImageCount()},
       present_heap{instance, scheduler.GetMasterSemaphore(), PRESENT_BINDINGS, 32} {
-    VideoCore::SetActiveDriverInfo({"Vulkan", std::string{instance.GetVendorName()},
-                                  instance.GetDriverVersionName()});
+    VideoCore::SetActiveDriverInfo(
+        {"Vulkan", std::string{instance.GetVendorName()}, instance.GetDriverVersionName()});
     CompileShaders();
     BuildLayouts();
     BuildPipelines();
@@ -247,6 +248,7 @@ void RendererVulkan::RenderToWindow(PresentWindow& window, const Layout::Framebu
     if (!skip_duplicates || Core::PerfStats::game_frames_updated) {
         Frame* frame = window.GetRenderFrame();
         frame->source_time = std::chrono::steady_clock::now();
+        frame->source_emulated_us = system.CoreTiming().GetGlobalTimeUs().count();
 
         if (layout.width != frame->width || layout.height != frame->height) {
             window.WaitPresent();

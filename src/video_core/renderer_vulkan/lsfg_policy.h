@@ -5,10 +5,12 @@
 
 namespace Vulkan {
 // Integer interpolation ratios keep one history pair and avoid fractional frame cadence.
+// input_interval uses emulated time. Refresh rate only detects an inactive display;
+// an Android display-mode switch must not change the requested interpolation ratio.
 inline unsigned LsfgMultiplier(unsigned mode, double refresh_rate, double input_interval) {
     if (mode == 0 || !std::isfinite(refresh_rate) || refresh_rate <= 0)
         return 1;
-    const double ceiling = std::min(mode == 1 ? 60.0 : 120.0, refresh_rate);
+    const double ceiling = mode == 1 ? 60.0 : 120.0;
     const double input_rate = input_interval > 0 && input_interval < 0.025 ? 60.0 : 30.0;
     return std::clamp(static_cast<unsigned>((ceiling + 0.5) / input_rate), 1u, 4u);
 }

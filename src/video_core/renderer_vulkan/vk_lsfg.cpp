@@ -62,6 +62,7 @@ void Lsfg::Reset() {
     history = false;
     slot = 0;
     previous = {};
+    previous_emulated_us = 0;
 }
 void Lsfg::Create(u32 w, u32 h, const std::string& path, unsigned factor) {
     const auto physical = instance.GetPhysicalDevice();
@@ -184,24 +185,28 @@ Lsfg::Result Lsfg::Prepare(Frame* frame) {
         const auto interval = frame->source_time - previous;
         const double refresh = GetLsfgDisplayRefreshRate(main_window);
         const double input_seconds = std::chrono::duration<double>(interval).count();
+        const double native_seconds =
+            previous_emulated_us > 0 && frame->source_emulated_us > previous_emulated_us
+                ? (frame->source_emulated_us - previous_emulated_us) / 1e6
+                : 0;
         const auto factor =
-            LsfgMultiplier(Settings::values.lsfg_mode.GetValue(), refresh, input_seconds);
+            LsfgMultiplier(Settings::values.lsfg_mode.GetValue(), refresh, native_seconds);
         if (initialized &&
             (width != frame->width || height != frame->height || multiplier != factor))
             Reset();
-        if (factor == 1 || (interval > std::chrono::steady_clock::duration::zero() &&
-                            interval < std::chrono::milliseconds(14))) {
+        if (factor == 1 || (native_seconds > 0 && native_seconds < 0.014)) {
             if (initialized)
                 Reset();
             previous = frame->source_time;
+            previous_emulated_us = frame->source_emulated_us;
             Status(4);
             return result;
         }
         if (!initialized)
             Create(frame->width, frame->height, path, factor);
         instance.GetGraphicsQueue().waitIdle();
-        const bool cadence_ok =
-            interval >= std::chrono::milliseconds(14) && interval <= std::chrono::milliseconds(70);
+        const bool cadence_ok = interval > std::chrono::steady_clock::duration::zero() &&
+                                interval <= std::chrono::milliseconds(250) && native_seconds > 0;
         const bool first_input = previous == std::chrono::steady_clock::time_point{};
         if (!cadence_ok) {
             if (history) {
@@ -276,8 +281,8 @@ Lsfg::Result Lsfg::Prepare(Frame* frame) {
             if (history && cadence_ok) {
                 result.generated.assign(images.begin() + 2, images.end());
                 result.spacing = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
-                    std::chrono::duration<double>(LsfgSpacing(factor,
-                        std::min(refresh, Settings::values.lsfg_mode.GetValue() == 1 ? 60.0 : 120.0),
+                    std::chrono::duration<double>(LsfgSpacing(
+                        factor, Settings::values.lsfg_mode.GetValue() == 1 ? 60.0 : 120.0,
                         input_seconds)));
                 Status(3, std::chrono::duration<double, std::milli>(elapsed).count());
             } else {
@@ -287,6 +292,7 @@ Lsfg::Result Lsfg::Prepare(Frame* frame) {
             Status(first_input || cadence_ok ? 2 : 4);
         }
         previous = frame->source_time;
+        previous_emulated_us = frame->source_emulated_us;
         history = first_input || cadence_ok;
         slot = history ? slot ^ 1 : 0;
         return result;

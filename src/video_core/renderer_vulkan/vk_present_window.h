@@ -29,6 +29,7 @@ class Lsfg;
 
 struct Frame {
     std::chrono::steady_clock::time_point source_time;
+    u64 source_emulated_us{};
     u32 width;
     u32 height;
     VmaAllocation allocation;

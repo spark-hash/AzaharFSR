@@ -173,7 +173,7 @@ class SecondaryDisplayPresentation(
     private var touchscreenPointerId = -1
     fun updateRefreshRate() {
         if (::surfaceView.isInitialized) {
-            LsfgDisplay.update(surfaceView.holder.surface, display, true)
+            LsfgDisplay.update(surfaceView.holder.surface, display, true, window)
         }
     }
 
