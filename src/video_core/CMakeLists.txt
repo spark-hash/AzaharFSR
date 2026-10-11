@@ -207,6 +207,12 @@ if (ENABLE_VULKAN)
         shader/generator/spv_fs_shader_gen.h
     )
     target_link_libraries(video_core PRIVATE vulkan-headers vma sirit SPIRV glslang)
+    if (ANDROID)
+        target_sources(video_core PRIVATE renderer_vulkan/vk_lsfg.cpp renderer_vulkan/vk_lsfg.h
+            renderer_vulkan/lsfg_assets.cpp renderer_vulkan/lsfg_assets.h)
+        target_link_libraries(video_core PRIVATE azahar_lsfg)
+        target_include_directories(video_core PRIVATE ${PROJECT_SOURCE_DIR}/externals/lsfg-vk/include)
+    endif()
 endif()
 
 if(ENABLE_SDL2)

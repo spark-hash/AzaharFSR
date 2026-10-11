@@ -20,6 +20,7 @@ enum class IntSetting(
     GRAPHICS_API(SettingKeys.graphics_api(), Settings.SECTION_RENDERER, 2),
     RESOLUTION_FACTOR(SettingKeys.resolution_factor(), Settings.SECTION_RENDERER, 1),
     ANTI_ALIASING(SettingKeys.anti_aliasing(), Settings.SECTION_RENDERER, 0),
+    LSFG_MODE(SettingKeys.lsfg_mode(), Settings.SECTION_RENDERER, 0),
     UPSCALING_MODE(SettingKeys.upscaling_mode(), Settings.SECTION_RENDERER, 0),
     ANIME4K_STRENGTH(SettingKeys.anime4k_strength(), Settings.SECTION_RENDERER, 60),
     FSR_SHARPNESS(SettingKeys.fsr_sharpness(), Settings.SECTION_RENDERER, 50),

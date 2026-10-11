@@ -497,6 +497,10 @@ if (ENABLE_VULKAN)
     endif()
 
     # adrenotools
+    if (ANDROID)
+        add_subdirectory(lsfg-vk EXCLUDE_FROM_ALL)
+    endif()
+
     if (ANDROID AND "arm64" IN_LIST ARCHITECTURE)
         add_subdirectory(libadrenotools EXCLUDE_FROM_ALL)
     endif()

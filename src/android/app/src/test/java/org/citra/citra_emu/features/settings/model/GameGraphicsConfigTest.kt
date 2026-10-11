@@ -106,4 +106,15 @@ class GameGraphicsConfigTest {
         reloaded.set("Renderer", "fsr_sharpness", null)
         assertEquals("100", reloaded.effective("Renderer", "fsr_sharpness", global, "50"))
     }
+
+    @Test fun lsfgOverrideSurvivesReloadAndResetRestoresInheritance() {
+        val global = GameGraphicsConfig("[Renderer]\nlsfg_mode=1\n")
+        val game = GameGraphicsConfig()
+        assertEquals("1", game.effective("Renderer", "lsfg_mode", global, "0"))
+        game.set("Renderer", "lsfg_mode", "0")
+        val restored = GameGraphicsConfig(game.encode())
+        assertEquals("0", restored.effective("Renderer", "lsfg_mode", global, "0"))
+        restored.set("Renderer", "lsfg_mode", null)
+        assertEquals("1", restored.effective("Renderer", "lsfg_mode", global, "0"))
+    }
 }

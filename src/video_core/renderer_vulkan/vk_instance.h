@@ -151,6 +151,8 @@ public:
         return index_type_uint8;
     }
 
+    bool IsLsfgSupported() const { return lsfg_supported; }
+
     /// Returns true when VK_EXT_robustness2 is supported
     bool IsNullDescriptorSupported() const {
         return null_descriptor;
@@ -333,6 +335,7 @@ protected:
     bool extended_dynamic_state{};
     bool custom_border_color{};
     bool index_type_uint8{};
+    bool lsfg_supported{};
     bool null_descriptor{};
     bool fragment_shader_interlock{};
     bool image_format_list{};

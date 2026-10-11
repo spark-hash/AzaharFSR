@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lsfg_mode">LSFG frame generation</string>
+    <string name="lsfg_description">Vulkan 1.3 only. Generates one intermediate frame for stable 30 FPS input. Requires imported Lossless Scaling shaders.</string>
+    <string name="lsfg_assets">LSFG shaders</string>
+    <string name="lsfg_assets_description">Import shaders from your purchased Lossless.dll</string>
+    <string name="lsfg_import_description">Select Lossless.dll from your purchased Lossless Scaling installation. This imports LSFG 3.1 Performance FP32 shaders locally without running the DLL. Shader files are shared by all games; frame generation can be enabled per game. Vulkan 1.3 is required. Frame generation may add latency and visual artifacts.</string>
+    <string name="lsfg_import">Import Lossless.dll</string>
+    <string name="lsfg_importing">Importing shaders…</string>
+    <string name="lsfg_import_failed">Import failed: %1$s</string>
+    <string name="lsfg_ready">Shaders imported. Enable LSFG in graphics settings.</string>
+    <string name="lsfg_missing">Shaders have not been imported.</string>
+    <string-array name="lsfgNames"><item>Off</item><item>LSFG 2× (30 → 60)</item></string-array>
+    <integer-array name="lsfgValues"><item>0</item><item>1</item></integer-array>
+    <string name="lsfg_diagnostics">LSFG: real %1$.1f / output %2$.1f FPS · %3$.1f ms · %4$s</string>
+    <string-array name="lsfgStatus"><item>Off</item><item>Shaders missing</item><item>Warming up</item><item>Active</item><item>Cadence bypass</item><item>Failed</item></string-array>
+</resources>

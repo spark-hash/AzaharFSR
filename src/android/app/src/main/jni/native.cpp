@@ -51,6 +51,9 @@
 #include "jni/camera/ndk_camera.h"
 #include "jni/camera/still_image_camera.h"
 #include "jni/config.h"
+#ifdef ENABLE_VULKAN
+#include "video_core/renderer_vulkan/lsfg_assets.h"
+#endif
 #include "network/announce_multiplayer_session.h"
 
 #ifdef ENABLE_OPENGL
@@ -1154,6 +1157,37 @@ void Java_org_citra_citra_1emu_NativeLibrary_removeAmiibo([[maybe_unused]] JNIEn
 }
 
 // init multiplayer class
+#ifdef ENABLE_VULKAN
+JNIEXPORT jstring JNICALL Java_org_citra_citra_1emu_NativeLibrary_importLsfgShaders(
+    JNIEnv* env, jclass, jstring dll, jstring output) {
+    const auto error = Vulkan::ImportLsfgShaders(GetJString(env, dll), GetJString(env, output));
+    return env->NewStringUTF(error.c_str());
+}
+JNIEXPORT void JNICALL Java_org_citra_citra_1emu_NativeLibrary_setLsfgShaderDirectory(
+    JNIEnv* env, jclass, jstring path) {
+    Vulkan::SetLsfgShaderDirectory(GetJString(env, path));
+}
+JNIEXPORT jdoubleArray JNICALL Java_org_citra_citra_1emu_NativeLibrary_getLsfgStats(JNIEnv* env, jclass) {
+    const auto stats = Vulkan::GetLsfgStats();
+    const auto result = env->NewDoubleArray(stats.size());
+    env->SetDoubleArrayRegion(result, 0, stats.size(), stats.data());
+    return result;
+}
+#else
+JNIEXPORT jstring JNICALL Java_org_citra_citra_1emu_NativeLibrary_importLsfgShaders(
+    JNIEnv* env, jclass, jstring, jstring) {
+    return env->NewStringUTF("This build has no Vulkan renderer");
+}
+JNIEXPORT void JNICALL Java_org_citra_citra_1emu_NativeLibrary_setLsfgShaderDirectory(
+    JNIEnv*, jclass, jstring) {}
+JNIEXPORT jdoubleArray JNICALL Java_org_citra_citra_1emu_NativeLibrary_getLsfgStats(JNIEnv* env, jclass) {
+    const double stats[4]{0, 0, 0, 5};
+    auto result = env->NewDoubleArray(4);
+    env->SetDoubleArrayRegion(result, 0, 4, stats);
+    return result;
+}
+#endif
+
 JNIEXPORT void JNICALL
 Java_org_citra_citra_1emu_NativeLibrary_initMultiplayer(JNIEnv* env, [[maybe_unused]] jobject obj) {
     if (multiplayer) {

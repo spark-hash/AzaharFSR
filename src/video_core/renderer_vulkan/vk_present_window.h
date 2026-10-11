@@ -3,7 +3,9 @@
 // Refer to the misc/licenses/gplv2.txt file included.
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include "common/polyfill_thread.h"
@@ -21,8 +23,12 @@ class Instance;
 class Swapchain;
 class Scheduler;
 class RenderManager;
+#ifdef ANDROID
+class Lsfg;
+#endif
 
 struct Frame {
+    std::chrono::steady_clock::time_point source_time;
     u32 width;
     u32 height;
     VmaAllocation allocation;
@@ -37,7 +43,7 @@ struct Frame {
 class PresentWindow final {
 public:
     explicit PresentWindow(Frontend::EmuWindow& emu_window, const Instance& instance,
-                           Scheduler& scheduler, bool low_refresh_rate);
+                           Scheduler& scheduler, bool low_refresh_rate, bool main_window = false);
     ~PresentWindow();
 
     /// Waits for all queued frames to finish presenting.
@@ -71,6 +77,8 @@ private:
     void PresentThread(std::stop_token token);
 
     void CopyToSwapchain(Frame* frame);
+    void PresentImage(Frame* frame, vk::Image image, vk::ImageLayout layout, bool wait_render,
+                      bool final);
 
     vk::RenderPass CreateRenderpass();
 
@@ -79,6 +87,10 @@ private:
     const Instance& instance;
     Scheduler& scheduler;
     bool low_refresh_rate;
+    bool main_window;
+#ifdef ANDROID
+    std::unique_ptr<Lsfg> lsfg;
+#endif
     vk::SurfaceKHR surface;
     vk::SurfaceKHR next_surface{};
     Swapchain swapchain;

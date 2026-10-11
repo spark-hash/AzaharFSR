@@ -176,8 +176,15 @@ object NativeLibrary {
 
     @Keep
     @JvmStatic
-    fun prepareGameDriver(gameSettingsId: String, useVulkan: Boolean): Boolean =
-        !useVulkan || org.citra.citra_emu.utils.GpuDriverHelper.initializeForGame(gameSettingsId)
+    fun prepareGameDriver(gameSettingsId: String, useVulkan: Boolean): Boolean {
+        org.citra.citra_emu.utils.LsfgHelper.activate()
+        return !useVulkan ||
+            org.citra.citra_emu.utils.GpuDriverHelper.initializeForGame(gameSettingsId)
+    }
+
+    external fun importLsfgShaders(dll: String, output: String): String
+    external fun setLsfgShaderDirectory(path: String)
+    external fun getLsfgStats(): DoubleArray
 
     // Surface Handling
     external fun surfaceChanged(surf: Surface)

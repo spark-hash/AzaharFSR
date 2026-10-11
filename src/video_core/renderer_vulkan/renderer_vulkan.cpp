@@ -114,7 +114,7 @@ RendererVulkan::RendererVulkan(Core::System& system, Pica::PicaCore& pica_,
     : RendererBase{system, window, secondary_window}, memory{system.Memory()}, pica{pica_},
       instance{window, Settings::values.physical_device.GetValue()}, scheduler{instance},
       renderpass_cache{instance, scheduler},
-      main_present_window{window, instance, scheduler, IsLowRefreshRate()},
+      main_present_window{window, instance, scheduler, IsLowRefreshRate(), true},
       vertex_buffer{instance, scheduler, vk::BufferUsageFlagBits::eVertexBuffer,
                     VERTEX_BUFFER_SIZE},
       update_queue{instance}, rasterizer{memory,
@@ -238,9 +238,13 @@ void RendererVulkan::PrepareDraw(Frame* frame, const Layout::FramebufferLayout& 
 
 void RendererVulkan::RenderToWindow(PresentWindow& window, const Layout::FramebufferLayout& layout,
                                     bool flipped) {
-    if (!Settings::values.use_skip_duplicate_frames.GetValue() ||
-        Core::PerfStats::game_frames_updated) {
+    bool skip_duplicates = Settings::values.use_skip_duplicate_frames.GetValue();
+#ifdef ANDROID
+    skip_duplicates |= Settings::values.lsfg_mode.GetValue() != 0;
+#endif
+    if (!skip_duplicates || Core::PerfStats::game_frames_updated) {
         Frame* frame = window.GetRenderFrame();
+        frame->source_time = std::chrono::steady_clock::now();
 
         if (layout.width != frame->width || layout.height != frame->height) {
             window.WaitPresent();

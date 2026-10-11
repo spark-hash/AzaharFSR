@@ -1549,6 +1549,8 @@ class EmulationFragment :
             val timeGpu = 6
             val timeSwap = 7
             val timeRem = 8
+            var lastLsfg = NativeLibrary.getLsfgStats()
+            var lastPresentationTime = android.os.SystemClock.elapsedRealtime()
             perfStatsUpdater = Runnable {
                 val sb = StringBuilder()
                 val perfStats = NativeLibrary.getPerfStats()
@@ -1569,6 +1571,26 @@ class EmulationFragment :
                         perfStats[timeSvc] * 1000, perfStats[timeRem] * 1000,
                         ram, memory.availMem / 1048576L, getBatteryTemperature()
                     )
+                    val lsfg = NativeLibrary.getLsfgStats()
+                    val now = android.os.SystemClock.elapsedRealtime()
+                    val seconds = ((now - lastPresentationTime) / 1000.0).coerceAtLeast(0.001)
+                    if (IntSetting.LSFG_MODE.int != 0 && lsfg.size == 4 && lastLsfg.size == 4) {
+                        val realFps = ((lsfg[0] - lastLsfg[0]) / seconds).coerceAtLeast(0.0)
+                        val outputFps =
+                            realFps + ((lsfg[1] - lastLsfg[1]) / seconds).coerceAtLeast(0.0)
+                        val states = resources.getStringArray(R.array.lsfgStatus)
+                        overlay.append(
+                            "\n" + getString(
+                                R.string.lsfg_diagnostics,
+                                realFps,
+                                outputFps,
+                                lsfg[2],
+                                states[lsfg[3].toInt().coerceIn(states.indices)]
+                            )
+                        )
+                    }
+                    lastLsfg = lsfg
+                    lastPresentationTime = now
                     overlay.setBackgroundResource(R.color.citra_transparent_black)
                 } else {
                     if (BooleanSetting.PERF_OVERLAY_SHOW_FPS.boolean) {

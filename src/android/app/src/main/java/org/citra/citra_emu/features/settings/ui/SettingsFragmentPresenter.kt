@@ -1037,6 +1037,29 @@ class SettingsFragmentPresenter(private val fragmentView: SettingsFragmentView) 
                 )
             )
             add(
+                SingleChoiceSetting(
+                    IntSetting.LSFG_MODE,
+                    R.string.lsfg_mode,
+                    R.string.lsfg_description,
+                    R.array.lsfgNames,
+                    R.array.lsfgValues,
+                    IntSetting.LSFG_MODE.key,
+                    IntSetting.LSFG_MODE.defaultValue
+                )
+            )
+            add(
+                RunnableSetting(
+                    R.string.lsfg_assets,
+                    R.string.lsfg_assets_description,
+                    true,
+                    runnable = {
+                        settingsActivity.startActivity(
+                            android.content.Intent(settingsActivity, LsfgActivity::class.java)
+                        )
+                    }
+                )
+            )
+            add(
                 SliderSetting(
                     IntSetting.FSR_SHARPNESS,
                     R.string.upscaling_sharpness,

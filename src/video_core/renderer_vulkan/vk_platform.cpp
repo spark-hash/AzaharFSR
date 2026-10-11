@@ -316,7 +316,12 @@ vk::UniqueInstance CreateInstance(const Common::DynamicLibrary& library,
         .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
         .pEngineName = "Citra Vulkan",
         .engineVersion = VK_MAKE_VERSION(1, 0, 0),
-        .apiVersion = TargetVulkanApiVersion,
+        .apiVersion =
+#ifdef ANDROID
+            std::min(available_version, static_cast<u32>(VK_API_VERSION_1_3)),
+#else
+            TargetVulkanApiVersion,
+#endif
     };
 
     boost::container::static_vector<const char*, 2> layers;

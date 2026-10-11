@@ -13,6 +13,11 @@
 #include "video_core/renderer_vulkan/vk_swapchain.h"
 #include "vk_platform.h"
 
+#ifdef ANDROID
+#include "video_core/renderer_vulkan/lsfg_assets.h"
+#include "video_core/renderer_vulkan/vk_lsfg.h"
+#endif
+
 #include <vk_mem_alloc.h>
 
 MICROPROFILE_DEFINE(Vulkan_WaitPresent, "Vulkan", "Wait For Present", MP_RGB(128, 128, 128));
@@ -98,9 +103,9 @@ bool CanBlitToSwapchain(const vk::PhysicalDevice& physical_device, vk::Format fo
 } // Anonymous namespace
 
 PresentWindow::PresentWindow(Frontend::EmuWindow& emu_window_, const Instance& instance_,
-                             Scheduler& scheduler_, bool low_refresh_rate_)
+                             Scheduler& scheduler_, bool low_refresh_rate_, bool main_window_)
     : emu_window{emu_window_}, instance{instance_}, scheduler{scheduler_},
-      low_refresh_rate{low_refresh_rate_},
+      low_refresh_rate{low_refresh_rate_}, main_window{main_window_},
       surface{CreateSurface(instance.GetInstance(), emu_window)}, next_surface{surface},
       swapchain{instance, emu_window.GetFramebufferLayout().width,
                 emu_window.GetFramebufferLayout().height, surface, low_refresh_rate_},
@@ -154,6 +159,16 @@ PresentWindow::PresentWindow(Frontend::EmuWindow& emu_window_, const Instance& i
 
 PresentWindow::~PresentWindow() {
     scheduler.Finish();
+    WaitPresent();
+    present_thread.request_stop();
+    frame_cv.notify_all();
+    if (present_thread.joinable())
+        present_thread.join();
+#ifdef ANDROID
+    lsfg.reset();
+    if (main_window)
+        SetLsfgStatus(0);
+#endif
     const vk::Device device = instance.GetDevice();
     // If the window is destroyed before the next_surface is
     // consumed, make sure to destroy it here to prevent a
@@ -371,6 +386,32 @@ void PresentWindow::NotifySurfaceChanged() {
 }
 
 void PresentWindow::CopyToSwapchain(Frame* frame) {
+#ifdef ANDROID
+    if (main_window && Settings::values.lsfg_mode.GetValue() != 0 && blit_supported) {
+        if (!lsfg)
+            lsfg = std::make_unique<Lsfg>(instance, scheduler);
+        const auto result = lsfg->Prepare(frame);
+        if (result.consumed) {
+            if (result.generated) {
+                PresentImage(frame, result.generated, vk::ImageLayout::eGeneral, false, false);
+                std::this_thread::sleep_for(result.spacing);
+            }
+            PresentImage(frame, result.real ? result.real : frame->image,
+                         result.real ? vk::ImageLayout::eGeneral
+                                     : vk::ImageLayout::eTransferSrcOptimal,
+                         false, true);
+            return;
+        }
+    } else if (main_window) {
+        lsfg.reset();
+        SetLsfgStatus(Settings::values.lsfg_mode.GetValue() ? 5 : 0);
+    }
+#endif
+    PresentImage(frame, frame->image, vk::ImageLayout::eTransferSrcOptimal, true, true);
+}
+
+void PresentWindow::PresentImage(Frame* frame, vk::Image source, vk::ImageLayout source_layout,
+                                 bool wait_render, bool final) {
     const auto recreate_swapchain = [&] {
 #ifdef ANDROID
         {
@@ -405,6 +446,7 @@ void PresentWindow::CopyToSwapchain(Frame* frame) {
         .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit,
     };
     const vk::CommandBuffer cmdbuf = frame->cmdbuf;
+    cmdbuf.reset();
     cmdbuf.begin(begin_info);
 
     const vk::Extent2D extent = swapchain.GetExtent();
@@ -426,13 +468,13 @@ void PresentWindow::CopyToSwapchain(Frame* frame) {
             },
         },
         vk::ImageMemoryBarrier{
-            .srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite,
+            .srcAccessMask = vk::AccessFlagBits::eMemoryRead | vk::AccessFlagBits::eMemoryWrite,
             .dstAccessMask = vk::AccessFlagBits::eTransferRead,
-            .oldLayout = vk::ImageLayout::eTransferSrcOptimal,
-            .newLayout = vk::ImageLayout::eTransferSrcOptimal,
+            .oldLayout = source_layout,
+            .newLayout = source_layout,
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = frame->image,
+            .image = source,
             .subresourceRange{
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
                 .baseMipLevel = 0,
@@ -459,18 +501,17 @@ void PresentWindow::CopyToSwapchain(Frame* frame) {
         },
     };
 
-    cmdbuf.pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput,
+    cmdbuf.pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands,
                            vk::PipelineStageFlagBits::eTransfer, vk::DependencyFlagBits::eByRegion,
                            {}, {}, pre_barriers);
 
     if (blit_supported) {
-        cmdbuf.blitImage(frame->image, vk::ImageLayout::eTransferSrcOptimal, swapchain_image,
-                         vk::ImageLayout::eTransferDstOptimal,
-                         MakeImageBlit(frame->width, frame->height, extent.width, extent.height),
-                         Settings::values.filter_mode.GetValue() ? vk::Filter::eLinear
-                                                                 : vk::Filter::eNearest);
+        cmdbuf.blitImage(
+            source, source_layout, swapchain_image, vk::ImageLayout::eTransferDstOptimal,
+            MakeImageBlit(frame->width, frame->height, extent.width, extent.height),
+            Settings::values.filter_mode.GetValue() ? vk::Filter::eLinear : vk::Filter::eNearest);
     } else {
-        cmdbuf.copyImage(frame->image, vk::ImageLayout::eTransferSrcOptimal, swapchain_image,
+        cmdbuf.copyImage(source, source_layout, swapchain_image,
                          vk::ImageLayout::eTransferDstOptimal,
                          MakeImageCopy(frame->width, frame->height, extent.width, extent.height));
     }
@@ -482,8 +523,8 @@ void PresentWindow::CopyToSwapchain(Frame* frame) {
     cmdbuf.end();
 
     static constexpr std::array<vk::PipelineStageFlags, 2> wait_stage_masks = {
-        vk::PipelineStageFlagBits::eColorAttachmentOutput,
-        vk::PipelineStageFlagBits::eAllGraphics,
+        vk::PipelineStageFlagBits::eTransfer,
+        vk::PipelineStageFlagBits::eTransfer,
     };
 
     const vk::Semaphore present_ready = swapchain.GetPresentReadySemaphore();
@@ -491,7 +532,7 @@ void PresentWindow::CopyToSwapchain(Frame* frame) {
     const std::array wait_semaphores = {image_acquired, frame->render_ready};
 
     vk::SubmitInfo submit_info = {
-        .waitSemaphoreCount = static_cast<u32>(wait_semaphores.size()),
+        .waitSemaphoreCount = wait_render ? 2u : 1u,
         .pWaitSemaphores = wait_semaphores.data(),
         .pWaitDstStageMask = wait_stage_masks.data(),
         .commandBufferCount = 1u,
@@ -500,16 +541,26 @@ void PresentWindow::CopyToSwapchain(Frame* frame) {
         .pSignalSemaphores = &present_ready,
     };
 
-    std::scoped_lock submit_lock{scheduler.submit_mutex, recreate_surface_mutex};
+    auto temporary_fence = final ? vk::UniqueFence{} : instance.GetDevice().createFenceUnique({});
+    {
+        std::scoped_lock submit_lock{scheduler.submit_mutex, recreate_surface_mutex};
 
-    try {
-        graphics_queue.submit(submit_info, frame->present_done);
-    } catch (vk::DeviceLostError& err) {
-        LOG_CRITICAL(Render_Vulkan, "Device lost during present submit: {}", err.what());
-        UNREACHABLE();
+        try {
+            graphics_queue.submit(submit_info, final ? frame->present_done : *temporary_fence);
+        } catch (vk::DeviceLostError& err) {
+            LOG_CRITICAL(Render_Vulkan, "Device lost during present submit: {}", err.what());
+            UNREACHABLE();
+        }
+
+        swapchain.Present();
     }
-
-    swapchain.Present();
+    if (!final) {
+        (void)instance.GetDevice().waitForFences(*temporary_fence, true, UINT64_MAX);
+    }
+#ifdef ANDROID
+    if (main_window)
+        CountLsfgPresent(!final);
+#endif
 }
 
 vk::RenderPass PresentWindow::CreateRenderpass() {

@@ -205,6 +205,7 @@ void Config::ReadValues() {
                                           .GetString("Renderer", "pp_shader_name", default_shader);
     ReadSetting("Renderer", Settings::values.filter_mode);
     ReadSetting("Renderer", Settings::values.anti_aliasing);
+    ReadSetting("Renderer", Settings::values.lsfg_mode);
     ReadSetting("Renderer", Settings::values.fsr_enabled);
     ReadSetting("Renderer", Settings::values.fsr_sharpness);
     ReadSetting("Renderer", Settings::values.anime4k_strength);

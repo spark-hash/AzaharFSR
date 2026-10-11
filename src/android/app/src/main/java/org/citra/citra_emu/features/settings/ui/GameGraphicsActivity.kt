@@ -122,6 +122,10 @@ class GameGraphicsActivity : AppCompatActivity() {
             R.array.upscalingNames,
             R.array.upscalingValues
         )
+        choice(IntSetting.LSFG_MODE, R.string.lsfg_mode, R.array.lsfgNames, R.array.lsfgValues)
+        row(getString(R.string.lsfg_assets), { getString(R.string.lsfg_assets_description) }) {
+            startActivity(Intent(this, LsfgActivity::class.java))
+        }
         number(IntSetting.FSR_SHARPNESS, R.string.upscaling_sharpness, 0.0, 100.0)
         toggle(BooleanSetting.LINEAR_FILTERING, R.string.linear_filtering)
         toggle(BooleanSetting.USE_INTEGER_SCALING, R.string.use_integer_scaling)

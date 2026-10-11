@@ -396,7 +396,8 @@ void Instance::CreateAttribTable() {
 
 bool Instance::CreateDevice() {
     const vk::StructureChain feature_chain = physical_device.getFeatures2<
-        vk::PhysicalDeviceFeatures2, vk::PhysicalDevicePortabilitySubsetFeaturesKHR,
+        vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceVulkanMemoryModelFeatures,
+        vk::PhysicalDevicePortabilitySubsetFeaturesKHR,
         vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT,
         vk::PhysicalDeviceTimelineSemaphoreFeaturesKHR,
         vk::PhysicalDeviceCustomBorderColorFeaturesEXT, vk::PhysicalDeviceIndexTypeUint8FeaturesEXT,
@@ -524,9 +525,16 @@ bool Instance::CreateDevice() {
                 .logicOp = features.logicOp,
                 .samplerAnisotropy = features.samplerAnisotropy,
                 .fragmentStoresAndAtomics = features.fragmentStoresAndAtomics,
+#ifdef ANDROID
+                .shaderStorageImageExtendedFormats = features.shaderStorageImageExtendedFormats,
+                .shaderStorageImageReadWithoutFormat = features.shaderStorageImageReadWithoutFormat,
+                .shaderStorageImageWriteWithoutFormat =
+                    features.shaderStorageImageWriteWithoutFormat,
+#endif
                 .shaderClipDistance = features.shaderClipDistance,
             },
         },
+        vk::PhysicalDeviceVulkanMemoryModelFeatures{},
         vk::PhysicalDevicePortabilitySubsetFeaturesKHR{},
         vk::PhysicalDeviceTimelineSemaphoreFeaturesKHR{},
         vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT{},
@@ -548,6 +556,27 @@ bool Instance::CreateDevice() {
         property = false;                                                                          \
         device_chain.get<structName>().feature = false;                                            \
     }
+
+#ifdef ANDROID
+    const auto memory_features = feature_chain.get<vk::PhysicalDeviceVulkanMemoryModelFeatures>();
+    const u32 loader_version = VULKAN_HPP_DEFAULT_DISPATCHER.vkEnumerateInstanceVersion
+                                   ? vk::enumerateInstanceVersion()
+                                   : VK_API_VERSION_1_0;
+    lsfg_supported = loader_version >= VK_API_VERSION_1_3 &&
+                     physical_device.getProperties().apiVersion >= VK_API_VERSION_1_3 &&
+                     memory_features.vulkanMemoryModel;
+    if (lsfg_supported) {
+        auto& enabled_memory = device_chain.get<vk::PhysicalDeviceVulkanMemoryModelFeatures>();
+        enabled_memory.vulkanMemoryModel = true;
+        enabled_memory.vulkanMemoryModelDeviceScope = memory_features.vulkanMemoryModelDeviceScope;
+        enabled_memory.vulkanMemoryModelAvailabilityVisibilityChains =
+            memory_features.vulkanMemoryModelAvailabilityVisibilityChains;
+    } else {
+        device_chain.unlink<vk::PhysicalDeviceVulkanMemoryModelFeatures>();
+    }
+#else
+    device_chain.unlink<vk::PhysicalDeviceVulkanMemoryModelFeatures>();
+#endif
 
     if (has_portability_subset) {
         FEAT_SET(vk::PhysicalDevicePortabilitySubsetFeaturesKHR, triangleFans,

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lsfg_mode">LSFG 帧生成</string>
+    <string name="lsfg_description">仅限 Vulkan 1.3。为稳定的 30 FPS 输入生成中间帧，需要先导入 Lossless Scaling 着色器。</string>
+    <string name="lsfg_assets">LSFG 着色器</string>
+    <string name="lsfg_assets_description">从已购买的 Lossless.dll 导入着色器</string>
+    <string name="lsfg_import_description">请选择已购买版本的 Lossless.dll。本地提取 LSFG 3.1 Performance FP32 着色器，不会运行 DLL。着色器由所有游戏共用，帧生成可按游戏开启。需要 Vulkan 1.3，可能增加延迟并产生画面瑕疵。</string>
+    <string name="lsfg_import">导入 Lossless.dll</string>
+    <string name="lsfg_importing">正在导入着色器…</string>
+    <string name="lsfg_import_failed">导入失败： %1$s</string>
+    <string name="lsfg_ready">着色器已导入，请在图形设置中启用 LSFG。</string>
+    <string name="lsfg_missing">尚未导入着色器。</string>
+    <string-array name="lsfgNames"><item>关闭</item><item>LSFG 2× (30 → 60)</item></string-array>
+    <integer-array name="lsfgValues"><item>0</item><item>1</item></integer-array>
+    <string name="lsfg_diagnostics">LSFG：真实 %1$.1f / 输出 %2$.1f FPS · %3$.1f ms · %4$s</string>
+    <string-array name="lsfgStatus"><item>关闭</item><item>缺少着色器</item><item>准备帧历史</item><item>运行中</item><item>输入帧率不适用</item><item>初始化失败</item></string-array>
+</resources>

@@ -209,6 +209,11 @@ static const char* android_config_default_file_content = (BOOST_HANA_STRING(R"(
 )") DECLARE_KEY(anti_aliasing) BOOST_HANA_STRING(R"(
 
 # Vulkan full-frame upscaler: 0 = Off, 1 = FSR 1, 2 = Anime4K Classic.
+)") DECLARE_KEY(lsfg_mode) BOOST_HANA_STRING(R"(
+# LSFG 3.1 Performance: 0 = off, 1 = 2x for 30 FPS input (requires imported shaders).
+# This is frame interpolation, not a simulation-speed change.
+lsfg_mode =
+
 )") DECLARE_KEY(upscaling_mode) BOOST_HANA_STRING(R"(
 
 # Anime4K contour refinement strength, 0 to 100 (default 60).
