@@ -832,4 +832,6 @@
     <string name="emulation_occupied_quicksave_slot">快速保存 - %1$tF %1$tR</string>
     <string name="quickload_not_found">没有可用的快速保存。</string>
 
-    </resources>
+        <string name="performance_diagnostics">性能诊断</string>
+    <string name="performance_diagnostics_values">游戏 %1$.1f FPS · 系统 %2$.1f Hz\n模拟速度 %3$.0f%% · 帧处理 %4$.2f ms\nGPU 命令（CPU 耗时）%5$.2f ms\n呈现／等待 %6$.2f ms\nIPC %7$.2f · SVC %8$.2f · 其他 %9$.2f ms\n进程 RSS %10$s MiB · 可用 %11$d MiB\n电池 %12$.1f°C</string>
+</resources>

@@ -590,6 +590,12 @@ class EmulationFragment :
         super.onDetach()
     }
 
+    override fun onDestroyView() {
+        perfStatsUpdater?.let { perfStatsUpdateHandler.removeCallbacks(it) }
+        perfStatsUpdater = null
+        super.onDestroyView()
+    }
+
     override fun onDestroy() {
         if (::emulationState.isInitialized && requireActivity().isFinishing) {
             emulationState.stop()
@@ -762,6 +768,8 @@ class EmulationFragment :
             findItem(R.id.menu_show_overlay).isChecked = EmulationMenuSettings.showOverlay
             findItem(R.id.menu_performance_overlay_show).isChecked =
                 BooleanSetting.PERF_OVERLAY_ENABLE.boolean
+            findItem(R.id.menu_performance_diagnostics).isChecked =
+                preferences.getBoolean("performanceDiagnostics", false)
             findItem(R.id.menu_haptic_feedback).isChecked = EmulationMenuSettings.hapticFeedback
             findItem(R.id.menu_emulation_joystick_rel_center).isChecked =
                 EmulationMenuSettings.joystickRelCenter
@@ -784,6 +792,20 @@ class EmulationFragment :
                         BooleanSetting.PERF_OVERLAY_ENABLE,
                         SettingsFile.FILE_NAME_CONFIG
                     )
+                    updateShowPerformanceOverlay()
+                    true
+                }
+
+                R.id.menu_performance_diagnostics -> {
+                    val enabled = !preferences.getBoolean("performanceDiagnostics", false)
+                    preferences.edit().putBoolean("performanceDiagnostics", enabled).apply()
+                    if (enabled) {
+                        BooleanSetting.PERF_OVERLAY_ENABLE.boolean = true
+                        settings.saveSetting(
+                            BooleanSetting.PERF_OVERLAY_ENABLE,
+                            SettingsFile.FILE_NAME_CONFIG
+                        )
+                    }
                     updateShowPerformanceOverlay()
                     true
                 }
@@ -1508,6 +1530,14 @@ class EmulationFragment :
             perfStatsUpdateHandler.removeCallbacks(perfStatsUpdater!!)
         }
 
+        val diagnostics = preferences.getBoolean("performanceDiagnostics", false)
+        val overlay = binding.performanceOverlayShowText
+        overlay.maxWidth = (
+            resources.displayMetrics.widthPixels -
+                40 * resources.displayMetrics.density
+            ).toInt().coerceAtLeast(1)
+        val inset = if (diagnostics) (6 * resources.displayMetrics.density).toInt() else 0
+        overlay.setPadding(inset, inset, inset, inset)
         if (BooleanSetting.PERF_OVERLAY_ENABLE.boolean) {
             @Suppress("UnusedVariable")
             val systemFps = 0
@@ -1522,8 +1552,25 @@ class EmulationFragment :
             perfStatsUpdater = Runnable {
                 val sb = StringBuilder()
                 val perfStats = NativeLibrary.getPerfStats()
+                for (index in perfStats.indices) {
+                    if (!perfStats[index].isFinite()) perfStats[index] = 0.0
+                }
                 val dividerString = "\u00A0\u2502 "
-                if (perfStats[fps] > 0) {
+                if (diagnostics) {
+                    val ram = processResidentMiB()?.toString() ?: "—"
+                    val memory = ActivityManager.MemoryInfo()
+                    (requireContext().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager)
+                        .getMemoryInfo(memory)
+                    overlay.text = getString(
+                        R.string.performance_diagnostics_values,
+                        perfStats[fps], perfStats[systemFps], perfStats[speed] * 100,
+                        perfStats[frametime] * 1000, perfStats[timeGpu] * 1000,
+                        perfStats[timeSwap] * 1000, perfStats[timeIpc] * 1000,
+                        perfStats[timeSvc] * 1000, perfStats[timeRem] * 1000,
+                        ram, memory.availMem / 1048576L, getBatteryTemperature()
+                    )
+                    overlay.setBackgroundResource(R.color.citra_transparent_black)
+                } else {
                     if (BooleanSetting.PERF_OVERLAY_SHOW_FPS.boolean) {
                         sb.append(String.format("FPS:\u00A0%d", (perfStats[fps] + 0.5).toInt()))
                     }
@@ -1555,10 +1602,8 @@ class EmulationFragment :
 
                     if (BooleanSetting.PERF_OVERLAY_SHOW_APP_RAM_USAGE.boolean) {
                         if (sb.isNotEmpty()) sb.append(dividerString)
-                        val appRamUsage =
-                            File("/proc/self/statm").readLines()[0].split(' ')[1].toLong() * 4096 /
-                                1000000
-                        sb.append("Process\u00A0RAM:\u00A0$appRamUsage\u00A0MB")
+                        val appRamUsage = processResidentMiB()?.toString() ?: "—"
+                        sb.append("Process\u00A0RAM:\u00A0$appRamUsage\u00A0MiB")
                     }
 
                     if (BooleanSetting.PERF_OVERLAY_SHOW_AVAILABLE_RAM.boolean) {
@@ -1599,6 +1644,14 @@ class EmulationFragment :
             binding.performanceOverlayShowText.visibility = View.GONE
         }
     }
+
+    private fun processResidentMiB(): Long? = runCatching {
+        val residentPages = File("/proc/self/statm").readText().trim()
+            .split(Regex("\\s+"))[1].toLong()
+        val pageSize = android.system.Os.sysconf(android.system.OsConstants._SC_PAGESIZE)
+        check(pageSize > 0)
+        residentPages * pageSize / 1048576L
+    }.getOrNull()
 
     private fun updateStatsPosition(position: Int) {
         val params =

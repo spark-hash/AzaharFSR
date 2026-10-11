@@ -1130,4 +1130,6 @@
     <string name="update_check_channel_stable">Stable</string>
     <string name="update_check_channel_prerelease">Prerelease</string>
 
+    <string name="performance_diagnostics">Performance diagnostics</string>
+    <string name="performance_diagnostics_values">Game %1$.1f FPS · System %2$.1f Hz\nSpeed %3$.0f%% · Active frame %4$.2f ms\nGPU commands (CPU) %5$.2f ms\nPresent / wait %6$.2f ms\nIPC %7$.2f · SVC %8$.2f · Other %9$.2f ms\nProcess RSS %10$s MiB · Free %11$d MiB\nBattery %12$.1f°C</string>
 </resources>
