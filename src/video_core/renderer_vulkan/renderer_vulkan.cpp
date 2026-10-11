@@ -1084,9 +1084,7 @@ void RendererVulkan::DrawScreens(Frame* frame, const Layout::FramebufferLayout& 
                 width < input_width || height < input_height ||
                 (width == input_width && height == input_height) || width < 2 || height < 2)
                 continue;
-            const float strength = (upscale_mode == 2 ? Settings::values.anime4k_strength.GetValue()
-                                                      : Settings::values.fsr_sharpness.GetValue()) /
-                                   100.0f;
+            const float strength = Settings::values.fsr_sharpness.GetValue() / 100.0f;
             const auto view = upscaler->Apply(index, screen.image_view, texture_crop(screen), width,
                                               height, strength);
             if (view) {

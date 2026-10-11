@@ -4,5 +4,7 @@
     <string name="upscaling_description">Upscale the full game screen. FSR preserves detail; Anime4K refines contours and may lose texture detail. Applies when displayed size exceeds internal rendering size.</string>
     <string name="anime4k_strength">Anime4K contour strength</string>
     <string name="anime4k_description">Only affects full-frame Anime4K upscaling, not texture filtering. Higher strength may remove detail.</string>
-    <string-array name="upscalingNames"><item>Off</item><item>FSR 1</item><item>Anime4K Classic (Experimental)</item></string-array>
+    <string-array name="upscalingNames"><item>Off</item><item>FSR 1</item><item>Anime4K Classic</item></string-array>
+    <string name="upscaling_sharpness">Upscaling sharpness</string>
+    <string name="upscaling_sharpness_description">Shared RCAS sharpening for FSR and Anime4K. Zero disables sharpening while retaining upscaling.</string>
 </resources>

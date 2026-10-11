@@ -103,7 +103,6 @@ std::mutex paused_mutex;
 std::mutex running_mutex;
 std::mutex game_config_mutex;
 std::string active_game_config_id;
-std::string active_game_config_text;
 std::condition_variable running_cv;
 
 // Guards the lifetime of s_surface/s_secondary_surface and the (re)creation of the
@@ -219,13 +218,11 @@ static Core::System::ResultStatus RunCitra(const std::string& filepath,
         std::scoped_lock config_lock(game_config_mutex);
         active_game_config_id = game_id;
         Config game_config{game_id};
-        active_game_config_text = game_config.GameConfigText();
     }
     SCOPE_EXIT({
         TryShutdown();
         std::scoped_lock config_lock(game_config_mutex);
         active_game_config_id.clear();
-        active_game_config_text.clear();
         Config{};
     });
     // Driver loading is serialized with the previous game's shutdown by running_mutex.
@@ -1055,11 +1052,23 @@ void Java_org_citra_citra_1emu_NativeLibrary_reloadSettings([[maybe_unused]] JNI
     Core::System& system{Core::System::GetInstance()};
     {
         std::scoped_lock config_lock(game_config_mutex);
-        // Editing this game's overrides is explicitly deferred until its next launch.
+        // Always re-read current overrides; global edits must not bypass them.
+        // Startup-only options retain the values used to create the running system.
         const auto graphics_api = Settings::values.graphics_api.GetValue();
-        Config{active_game_config_id, &active_game_config_text};
-        if (system.IsPoweredOn())
+        const auto vsync = Settings::values.use_vsync.GetValue();
+        const auto async_shaders = Settings::values.async_shader_compilation.GetValue();
+        const auto accurate_mul = Settings::values.shaders_accurate_mul.GetValue();
+        const auto async_custom = Settings::values.async_custom_loading.GetValue();
+        const auto renderer_debug = Settings::values.renderer_debug.GetValue();
+        Config{active_game_config_id};
+        if (system.IsPoweredOn()) {
             Settings::values.graphics_api = graphics_api;
+            Settings::values.use_vsync = vsync;
+            Settings::values.async_shader_compilation = async_shaders;
+            Settings::values.shaders_accurate_mul = accurate_mul;
+            Settings::values.async_custom_loading = async_custom;
+            Settings::values.renderer_debug = renderer_debug;
+        }
     }
 
     if (multiplayer) {

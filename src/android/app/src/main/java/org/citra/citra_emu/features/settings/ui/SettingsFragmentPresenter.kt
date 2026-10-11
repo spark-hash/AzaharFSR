@@ -1039,25 +1039,13 @@ class SettingsFragmentPresenter(private val fragmentView: SettingsFragmentView) 
             add(
                 SliderSetting(
                     IntSetting.FSR_SHARPNESS,
-                    R.string.fsr_sharpness,
-                    R.string.fsr_sharpness_description,
+                    R.string.upscaling_sharpness,
+                    R.string.upscaling_sharpness_description,
                     0,
                     100,
                     "%",
                     IntSetting.FSR_SHARPNESS.key,
                     IntSetting.FSR_SHARPNESS.defaultValue.toFloat()
-                )
-            )
-            add(
-                SliderSetting(
-                    IntSetting.ANIME4K_STRENGTH,
-                    R.string.anime4k_strength,
-                    R.string.anime4k_description,
-                    0,
-                    100,
-                    "%",
-                    IntSetting.ANIME4K_STRENGTH.key,
-                    IntSetting.ANIME4K_STRENGTH.defaultValue.toFloat()
                 )
             )
             add(

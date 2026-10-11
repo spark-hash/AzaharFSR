@@ -551,6 +551,8 @@ class EmulationFragment :
         super.onResume()
         Choreographer.getInstance().postFrameCallback(this)
         if (NativeLibrary.isRunning()) {
+            NativeLibrary.reloadSettings()
+            NativeLibrary.updateFramebuffer(NativeLibrary.isPortraitMode())
             emulationState.unpause()
 
             // If the overlay is enabled, we need to update the position if changed

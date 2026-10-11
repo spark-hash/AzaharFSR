@@ -93,4 +93,17 @@ class GameGraphicsConfigTest {
         val off = GameGraphicsConfig("[Renderer]\nfsr_enabled=false\n")
         assertEquals("0", off.getOverride("Renderer", "upscaling_mode"))
     }
+
+    @Test fun reloadingCurrentGameKeepsOverridesAfterGlobalEdits() {
+        val global = GameGraphicsConfig("[Renderer]\nupscaling_mode=1\nfsr_sharpness=50\n")
+        val game = GameGraphicsConfig("[Renderer]\nupscaling_mode=2\nfsr_sharpness=70\n")
+        game.set("Renderer", "fsr_sharpness", "30")
+        global.set("Renderer", "upscaling_mode", "0")
+        global.set("Renderer", "fsr_sharpness", "100")
+        val reloaded = GameGraphicsConfig(game.encode())
+        assertEquals("2", reloaded.effective("Renderer", "upscaling_mode", global, "0"))
+        assertEquals("30", reloaded.effective("Renderer", "fsr_sharpness", global, "50"))
+        reloaded.set("Renderer", "fsr_sharpness", null)
+        assertEquals("100", reloaded.effective("Renderer", "fsr_sharpness", global, "50"))
+    }
 }

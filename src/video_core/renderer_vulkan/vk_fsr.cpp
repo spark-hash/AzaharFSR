@@ -72,11 +72,14 @@ Fsr::Fsr(const Instance& instance_, Scheduler& scheduler_, DescriptorUpdateQueue
                                           .addressModeV = vk::SamplerAddressMode::eClampToEdge,
                                           .addressModeW = vk::SamplerAddressMode::eClampToEdge});
     const std::array sources =
-        anime4k ? std::array{HostShaders::ANIME4K_ENLARGE_COMP, HostShaders::ANIME4K_REFINE_COMP}
-                : std::array{HostShaders::FSR_EASU_COMP, HostShaders::FSR_RCAS_COMP};
-    for (u32 i = 0; i < 2; ++i) {
-        const auto spv = CompileGLSL(anime4k ? std::string{sources[i]} : Shader(sources[i]),
-                                     vk::ShaderStageFlagBits::eCompute);
+        anime4k ? std::array{HostShaders::ANIME4K_ENLARGE_COMP, HostShaders::ANIME4K_REFINE_COMP,
+                             HostShaders::FSR_RCAS_COMP}
+                : std::array{HostShaders::FSR_EASU_COMP, HostShaders::FSR_RCAS_COMP,
+                             HostShaders::FSR_RCAS_COMP};
+    for (u32 i = 0; i < (anime4k ? 3u : 2u); ++i) {
+        const auto spv =
+            CompileGLSL(anime4k && i < 2 ? std::string{sources[i]} : Shader(sources[i]),
+                        vk::ShaderStageFlagBits::eCompute);
         if (spv.empty()) {
             LOG_ERROR(Render_Vulkan,
                       "Spatial upscaling shader compilation failed; using normal presentation");
@@ -120,7 +123,7 @@ bool Fsr::Resize(Target& target, u32 width, u32 height) {
         return true;
     scheduler.Finish();
     Destroy(target);
-    for (u32 index = 0; index < target.images.size(); ++index) {
+    for (u32 index = 0; index < (anime4k ? 3u : 2u); ++index) {
         auto& image = target.images[index];
         const auto format =
             anime4k && index == 0 ? vk::Format::eR16G16B16A16Sfloat : vk::Format::eR8G8B8A8Unorm;
@@ -171,14 +174,14 @@ vk::ImageView Fsr::Apply(u32 slot, vk::ImageView input, Common::Rectangle<float>
     if (!available || crop.right <= crop.left || crop.bottom <= crop.top ||
         !Resize(target, width, height))
         return {};
-    const Parameters params{{crop.left, crop.top, crop.right, crop.bottom},
-                            {static_cast<float>(width), static_cast<float>(height)},
-                            anime4k ? strength : 2.0f * (1.0f - strength)};
-    // Zero disables RCAS while retaining EASU upscaling.
-    const u32 pass_count = anime4k || strength > 0.0f ? 2 : 1;
+    const u32 pass_count = (anime4k ? 2u : 1u) + (strength > 0.0f ? 1u : 0u);
     for (u32 pass = 0; pass < pass_count; ++pass) {
+        const Parameters params{{crop.left, crop.top, crop.right, crop.bottom},
+                                {static_cast<float>(width), static_cast<float>(height)},
+                                anime4k && pass == 1 ? 0.6f : 2.0f * (1.0f - strength)};
         const auto set = heap.Commit();
-        updates.AddImageSampler(set, 0, 0, pass == 0 ? input : target.images[0].view, *sampler);
+        updates.AddImageSampler(set, 0, 0, pass == 0 ? input : target.images[pass - 1].view,
+                                *sampler);
         updates.AddStorageImage(set, 1, target.images[pass].view);
         scheduler.Record([pipeline = *pipelines[pass], pipeline_layout = *layout, set, params,
                           width, height](vk::CommandBuffer cmd) {

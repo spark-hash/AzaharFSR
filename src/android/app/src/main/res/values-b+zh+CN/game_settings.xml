@@ -2,7 +2,7 @@
 <resources>
     <string name="game_graphics_settings">游戏独立图形设置</string>
     <string name="game_global_settings">全局设置</string>
-    <string name="game_settings_hint">修改只保存到当前游戏，下次启动游戏时生效。未指定的选项继承全局设置。全画面超分和抗锯齿需要 Vulkan；自定义驱动请先在全局 GPU 驱动管理中导入 ZIP，再在此选择。</string>
+    <string name="game_settings_hint">修改只保存到当前游戏。可动态调整的图形选项返回游戏后生效；渲染后端、驱动和启动选项需重启游戏。未指定的选项继承全局设置。全画面超分和抗锯齿需要 Vulkan；自定义驱动请先在全局 GPU 驱动管理中导入 ZIP，再在此选择。</string>
     <string name="game_setting_use_global">继承全局设置</string>
     <string name="game_setting_inherited">继承全局：%1$s</string>
     <string name="game_setting_override">当前游戏：%1$s</string>

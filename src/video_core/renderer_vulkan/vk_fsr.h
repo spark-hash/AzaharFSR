@@ -29,7 +29,7 @@ private:
         VmaAllocation allocation{};
     };
     struct Target {
-        std::array<Image, 2> images{};
+        std::array<Image, 3> images{};
         u32 width{}, height{};
     };
     void Destroy(Target& target);
@@ -40,7 +40,7 @@ private:
     DescriptorHeap heap;
     vk::UniquePipelineLayout layout;
     vk::UniqueSampler sampler;
-    std::array<vk::UniquePipeline, 2> pipelines;
+    std::array<vk::UniquePipeline, 3> pipelines;
     std::array<Target, 3> targets{};
     bool available{};
     const bool anime4k;
