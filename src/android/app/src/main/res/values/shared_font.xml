@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shared_font_mode">Game shared font</string>
+    <string name="shared_font_description">Takes effect after restarting the game. Automatic uses the CJK fallback when system fonts are missing.</string>
+    <string name="shared_font_assets">Import or select shared font</string>
+    <string name="shared_font_assets_description">BCFNT / shared_font.bin; no font CIA installation required</string>
+    <string name="shared_font_import_description">The app includes a CJK fallback with common simplified and traditional Chinese characters, kana and symbols. You can import an uncompressed BCFNT or shared_font.bin and select it globally or for one game. Importing selects the imported-font mode. Restart the game after changing fonts. TTF and CIA files cannot be imported here. This affects games that use the 3DS shared font; games with their own fonts are unaffected.</string>
+    <string name="shared_font_import">Import font</string>
+    <string name="shared_font_choose">Select imported font</string>
+    <string name="shared_font_clear">Clear selection and use automatic mode</string>
+    <string name="shared_font_inherit">Follow global font settings</string>
+    <string name="shared_font_none">No imported font selected</string>
+    <string name="shared_font_error">Font operation failed: %1$s</string>
+    <string-array name="sharedFontNames"><item>Automatic</item><item>Builtin CJK fallback</item><item>Imported font</item><item>Original behavior</item></string-array>
+    <integer-array name="sharedFontValues"><item>0</item><item>1</item><item>2</item><item>3</item></integer-array>
+</resources>

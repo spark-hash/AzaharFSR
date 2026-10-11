@@ -3,6 +3,7 @@
 // Refer to the misc/licenses/gplv2.txt file included.
 
 #pragma once
+#include <span>
 
 #include <array>
 #include <memory>
@@ -1085,6 +1086,9 @@ public:
 private:
     bool LoadSharedFont();
     bool LoadLegacySharedFont();
+    bool LoadBuiltinSharedFont();
+    bool LoadImportedSharedFont();
+    bool InstallSharedFont(std::span<const u8> data);
 
     Core::System& system;
 

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shared_font_mode">游戏共享字体</string>
+    <string name="shared_font_description">重启游戏后生效。自动模式在缺少系统字体时使用内置中文替代字体。</string>
+    <string name="shared_font_assets">导入或选择共享字体</string>
+    <string name="shared_font_assets_description">BCFNT / shared_font.bin，无需安装字体 CIA</string>
+    <string name="shared_font_import_description">应用已内置中文替代字体，包含常用简体、繁体汉字、假名及符号。也可导入未压缩的 BCFNT 或 shared_font.bin，并指定全局或每游戏使用。导入后会选择“导入字体”模式。更改字体后请重启游戏。此处不接受 TTF 或 CIA。仅影响使用 3DS 共享字体的游戏，不会替换游戏自带字体。</string>
+    <string name="shared_font_import">导入字体</string>
+    <string name="shared_font_choose">选择已导入字体</string>
+    <string name="shared_font_clear">清除选择，使用自动模式</string>
+    <string name="shared_font_inherit">跟随全局字体设置</string>
+    <string name="shared_font_none">尚未选择导入字体</string>
+    <string name="shared_font_error">字体操作失败：%1$s</string>
+    <string-array name="sharedFontNames"><item>自动</item><item>内置中文替代字体</item><item>导入字体</item><item>原有字体行为</item></string-array>
+    <integer-array name="sharedFontValues"><item>0</item><item>1</item><item>2</item><item>3</item></integer-array>
+</resources>

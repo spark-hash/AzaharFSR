@@ -97,6 +97,19 @@ class GameGraphicsActivity : AppCompatActivity() {
                     persist { config.clear() }
                 }.show()
         }
+        choice(
+            IntSetting.SHARED_FONT_MODE,
+            R.string.shared_font_mode,
+            R.array.sharedFontNames,
+            R.array.sharedFontValues
+        )
+        row(getString(R.string.shared_font_assets), {
+            getString(R.string.shared_font_assets_description)
+        }) {
+            startActivity(
+                Intent(this, SharedFontActivity::class.java).putExtra("game_settings_id", id)
+            )
+        }
         driverRow()
         choice(
             IntSetting.GRAPHICS_API,
@@ -187,6 +200,17 @@ class GameGraphicsActivity : AppCompatActivity() {
                 runCatching { GpuDriverHelper.getDrivers() }.getOrDefault(emptyList())
             }
             refreshers.forEach { it() }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::id.isInitialized && ::config.isInitialized) {
+            runCatching {
+                config = GameSettingsStore.read(id)
+                global = GameSettingsStore.global()
+                refreshers.forEach { it() }
+            }
         }
     }
 

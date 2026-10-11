@@ -33,6 +33,12 @@ SERIALIZE_EXPORT_IMPL(FileSys::ArchiveFactory_NCCH)
 
 namespace FileSys {
 
+bool IsOpenSourceFontArchive(std::span<const u8> bytes) {
+    return bytes.size() == sizeof(SHARED_FONT_DATA) &&
+        std::equal(bytes.begin(), bytes.end(), std::begin(SHARED_FONT_DATA));
+}
+
+
 struct NCCHArchivePath {
     u64_le tid;
     u32_le media_type;

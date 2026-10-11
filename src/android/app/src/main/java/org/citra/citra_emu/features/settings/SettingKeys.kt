@@ -87,6 +87,8 @@ object SettingKeys {
     external fun cardboard_y_shift(): String
     external fun filter_mode(): String
     external fun anti_aliasing(): String
+    external fun shared_font_mode(): String
+    external fun shared_font_file(): String
     external fun lsfg_mode(): String
     external fun upscaling_mode(): String
     external fun anime4k_strength(): String

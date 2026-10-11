@@ -39,6 +39,7 @@
 #include "core/frontend/applets/default_applets.h"
 #include "core/frontend/camera/factory.h"
 #include "core/hle/service/am/am.h"
+#include "core/hle/service/apt/bcfnt/font_assets.h"
 #include "core/hle/service/fs/archive.h"
 #include "core/hle/service/nfc/nfc.h"
 #include "core/hw/unique_data.h"
@@ -1063,6 +1064,8 @@ void Java_org_citra_citra_1emu_NativeLibrary_reloadSettings([[maybe_unused]] JNI
         const auto accurate_mul = Settings::values.shaders_accurate_mul.GetValue();
         const auto async_custom = Settings::values.async_custom_loading.GetValue();
         const auto renderer_debug = Settings::values.renderer_debug.GetValue();
+        const auto font_mode = Settings::values.shared_font_mode.GetValue();
+        const auto font_file = Settings::values.shared_font_file.GetValue();
         Config{active_game_config_id};
         if (system.IsPoweredOn()) {
             Settings::values.graphics_api = graphics_api;
@@ -1071,6 +1074,8 @@ void Java_org_citra_citra_1emu_NativeLibrary_reloadSettings([[maybe_unused]] JNI
             Settings::values.shaders_accurate_mul = accurate_mul;
             Settings::values.async_custom_loading = async_custom;
             Settings::values.renderer_debug = renderer_debug;
+            Settings::values.shared_font_mode = font_mode;
+            Settings::values.shared_font_file = font_file;
         }
         // The legacy texture filter is distinct from full-frame Anime4K upscaling.
         if (Settings::values.graphics_api.GetValue() == Settings::GraphicsAPI::Vulkan &&
@@ -1156,6 +1161,23 @@ void Java_org_citra_citra_1emu_NativeLibrary_removeAmiibo([[maybe_unused]] JNIEn
     nfc->RemoveAmiibo();
 }
 
+JNIEXPORT jstring JNICALL
+Java_org_citra_citra_1emu_NativeLibrary_validateSharedFont(JNIEnv* env, jclass, jbyteArray source) {
+    const auto size = env->GetArrayLength(source);
+    if (size < 20 || static_cast<std::size_t>(size) > Service::APT::BCFNT::SharedFontMemorySize)
+        return env->NewStringUTF("Font exceeds 3DS shared memory or is truncated");
+    std::vector<u8> bytes(static_cast<std::size_t>(size));
+    env->GetByteArrayRegion(source, 0, size, reinterpret_cast<jbyte*>(bytes.data()));
+    if (env->ExceptionCheck())
+        return nullptr;
+    const auto result = Service::APT::BCFNT::NormalizeFont(bytes);
+    return env->NewStringUTF(result.error.c_str());
+}
+JNIEXPORT void JNICALL Java_org_citra_citra_1emu_NativeLibrary_setSharedFontDirectory(
+    JNIEnv* env, jclass, jstring directory) {
+    Service::APT::BCFNT::SetFontDirectory(GetJString(env, directory));
+}
+
 // init multiplayer class
 #ifdef ENABLE_VULKAN
 JNIEXPORT jstring JNICALL Java_org_citra_citra_1emu_NativeLibrary_importLsfgShaders(
@@ -1163,24 +1185,28 @@ JNIEXPORT jstring JNICALL Java_org_citra_citra_1emu_NativeLibrary_importLsfgShad
     const auto error = Vulkan::ImportLsfgShaders(GetJString(env, dll), GetJString(env, output));
     return env->NewStringUTF(error.c_str());
 }
-JNIEXPORT void JNICALL Java_org_citra_citra_1emu_NativeLibrary_setLsfgShaderDirectory(
-    JNIEnv* env, jclass, jstring path) {
+JNIEXPORT void JNICALL
+Java_org_citra_citra_1emu_NativeLibrary_setLsfgShaderDirectory(JNIEnv* env, jclass, jstring path) {
     Vulkan::SetLsfgShaderDirectory(GetJString(env, path));
 }
-JNIEXPORT jdoubleArray JNICALL Java_org_citra_citra_1emu_NativeLibrary_getLsfgStats(JNIEnv* env, jclass) {
+JNIEXPORT jdoubleArray JNICALL Java_org_citra_citra_1emu_NativeLibrary_getLsfgStats(JNIEnv* env,
+                                                                                    jclass) {
     const auto stats = Vulkan::GetLsfgStats();
     const auto result = env->NewDoubleArray(stats.size());
     env->SetDoubleArrayRegion(result, 0, stats.size(), stats.data());
     return result;
 }
 #else
-JNIEXPORT jstring JNICALL Java_org_citra_citra_1emu_NativeLibrary_importLsfgShaders(
-    JNIEnv* env, jclass, jstring, jstring) {
+JNIEXPORT jstring JNICALL Java_org_citra_citra_1emu_NativeLibrary_importLsfgShaders(JNIEnv* env,
+                                                                                    jclass, jstring,
+                                                                                    jstring) {
     return env->NewStringUTF("This build has no Vulkan renderer");
 }
-JNIEXPORT void JNICALL Java_org_citra_citra_1emu_NativeLibrary_setLsfgShaderDirectory(
-    JNIEnv*, jclass, jstring) {}
-JNIEXPORT jdoubleArray JNICALL Java_org_citra_citra_1emu_NativeLibrary_getLsfgStats(JNIEnv* env, jclass) {
+JNIEXPORT void JNICALL Java_org_citra_citra_1emu_NativeLibrary_setLsfgShaderDirectory(JNIEnv*,
+                                                                                      jclass,
+                                                                                      jstring) {}
+JNIEXPORT jdoubleArray JNICALL Java_org_citra_citra_1emu_NativeLibrary_getLsfgStats(JNIEnv* env,
+                                                                                    jclass) {
     const double stats[4]{0, 0, 0, 5};
     auto result = env->NewDoubleArray(4);
     env->SetDoubleArrayRegion(result, 0, 4, stats);

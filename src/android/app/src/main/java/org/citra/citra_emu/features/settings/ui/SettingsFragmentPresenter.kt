@@ -342,6 +342,27 @@ class SettingsFragmentPresenter(private val fragmentView: SettingsFragmentView) 
     private fun addSystemSettings(sl: ArrayList<SettingsItem>) {
         settingsActivity.setToolbarTitle(settingsActivity.getString(R.string.preferences_system))
         sl.apply {
+            add(
+                SingleChoiceSetting(
+                    IntSetting.SHARED_FONT_MODE,
+                    R.string.shared_font_mode,
+                    R.string.shared_font_description,
+                    R.array.sharedFontNames,
+                    R.array.sharedFontValues
+                )
+            )
+            add(
+                RunnableSetting(
+                    R.string.shared_font_assets,
+                    R.string.shared_font_assets_description,
+                    true,
+                    runnable = {
+                        settingsActivity.startActivity(
+                            android.content.Intent(settingsActivity, SharedFontActivity::class.java)
+                        )
+                    }
+                )
+            )
             val usernameSetting = object : AbstractStringSetting {
                 override var string: String
                     get() = SystemSaveGame.getUsername()

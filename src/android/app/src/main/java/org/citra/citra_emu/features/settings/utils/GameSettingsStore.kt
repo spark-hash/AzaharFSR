@@ -42,6 +42,14 @@ object GameSettingsStore {
         GameGraphicsConfig(it.bufferedReader().readText())
     }
 
+    fun saveGlobal(config: GameGraphicsConfig) {
+        val file = SettingsFile.getSettingsFile(SettingsFile.FILE_NAME_CONFIG)
+        CitraApplication.appContext.contentResolver.openOutputStream(file.uri, "wt")!!.use {
+            it.write(config.encode().toByteArray(Charsets.UTF_8))
+            it.flush()
+        }
+    }
+
     fun save(id: String, config: GameGraphicsConfig) {
         val file = file(id, true) ?: error("Game settings file unavailable")
         CitraApplication.appContext.contentResolver.openOutputStream(file.uri, "wt")!!.use {

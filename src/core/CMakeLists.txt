@@ -237,6 +237,10 @@ add_library(citra_core STATIC EXCLUDE_FROM_ALL
     hle/service/apt/ns_s.h
     hle/service/apt/bcfnt/bcfnt.cpp
     hle/service/apt/bcfnt/bcfnt.h
+    hle/service/apt/bcfnt/font_validation.cpp
+    hle/service/apt/bcfnt/font_validation.h
+    hle/service/apt/bcfnt/font_assets.cpp
+    hle/service/apt/bcfnt/font_assets.h
     hle/service/apt/errors.h
     hle/service/boss/boss.cpp
     hle/service/boss/boss.h

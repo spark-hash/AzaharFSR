@@ -20,6 +20,7 @@ enum class IntSetting(
     GRAPHICS_API(SettingKeys.graphics_api(), Settings.SECTION_RENDERER, 2),
     RESOLUTION_FACTOR(SettingKeys.resolution_factor(), Settings.SECTION_RENDERER, 1),
     ANTI_ALIASING(SettingKeys.anti_aliasing(), Settings.SECTION_RENDERER, 0),
+    SHARED_FONT_MODE(SettingKeys.shared_font_mode(), Settings.SECTION_UTILITY, 0),
     LSFG_MODE(SettingKeys.lsfg_mode(), Settings.SECTION_RENDERER, 0),
     UPSCALING_MODE(SettingKeys.upscaling_mode(), Settings.SECTION_RENDERER, 0),
     ANIME4K_STRENGTH(SettingKeys.anime4k_strength(), Settings.SECTION_RENDERER, 60),
@@ -89,6 +90,7 @@ enum class IntSetting(
 
     companion object {
         private val NOT_RUNTIME_EDITABLE = listOf(
+            SHARED_FONT_MODE,
             EMULATED_REGION,
             INIT_CLOCK,
             GRAPHICS_API,

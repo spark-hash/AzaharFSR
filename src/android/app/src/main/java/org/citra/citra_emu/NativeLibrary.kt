@@ -182,6 +182,9 @@ object NativeLibrary {
             org.citra.citra_emu.utils.GpuDriverHelper.initializeForGame(gameSettingsId)
     }
 
+    external fun validateSharedFont(bytes: ByteArray): String
+    external fun setSharedFontDirectory(path: String)
+
     external fun importLsfgShaders(dll: String, output: String): String
     external fun setLsfgShaderDirectory(path: String)
     external fun getLsfgStats(): DoubleArray

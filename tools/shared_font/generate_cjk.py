@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-or-later
+"""Build Azahar CJK Fallback (OFL-1.1) from the vendored Unifont 13.0.06.
+
+Requires Pillow and either python-zstandard or --zstd-library pointing to libzstd.
+The 14px glyphs with 1px gutters fit the 3DS 0x332000-byte shared-font allocation.
+"""
+import argparse
+import ctypes
+import hashlib
+import json
+import math
+import struct
+from pathlib import Path
+
+from PIL import Image
+
+ROOT = Path(__file__).resolve().parents[2]
+RANGES = [(0x20, 0x24F), (0x2000, 0x206F), (0x20A0, 0x21FF),
+          (0x2500, 0x26FF), (0x3000, 0x33FF), (0x4E00, 0x9FFF),
+          (0xF900, 0xFAFF), (0xFF00, 0xFFEF), (0xFFFD, 0xFFFD)]
+
+
+def compress(data, library):
+    if not library:
+        import zstandard
+        return zstandard.ZstdCompressor(level=19).compress(data)
+    lib = ctypes.CDLL(str(Path(library).absolute()))
+    lib.ZSTD_compressBound.argtypes = [ctypes.c_size_t]
+    lib.ZSTD_compressBound.restype = ctypes.c_size_t
+    lib.ZSTD_compress.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_void_p,
+                                 ctypes.c_size_t, ctypes.c_int]
+    lib.ZSTD_compress.restype = ctypes.c_size_t
+    lib.ZSTD_isError.argtypes = [ctypes.c_size_t]
+    lib.ZSTD_isError.restype = ctypes.c_uint
+    output = ctypes.create_string_buffer(lib.ZSTD_compressBound(len(data)))
+    size = lib.ZSTD_compress(output, len(output), data, len(data), 19)
+    assert not lib.ZSTD_isError(size)
+    return output.raw[:size]
+
+
+def morton(x, y):
+    return sum(((x >> b) & 1) << (2 * b) | ((y >> b) & 1) << (2 * b + 1)
+               for b in range(3))
+
+
+def build(source):
+    glyphs = {}
+    for line in source.read_text().splitlines():
+        code, bits = line.split(':')
+        code = int(code, 16)
+        if any(start <= code <= end for start, end in RANGES):
+            glyphs[code] = bytes.fromhex(bits)
+    codes = sorted(glyphs)
+    assert all(c in glyphs for c in map(ord, '中文简体繁體汉漢游戏遊戲'))
+    sheets = math.ceil(len(codes) / 4096)
+    pixels = bytearray(sheets * 1024 * 1024 // 2)
+    widths = bytearray()
+    preview = Image.new('L', (16 * 12, 16), 0)
+    sample = '中文简体繁體汉漢游戏遊戲'
+    for index, code in enumerate(codes):
+        bits = glyphs[code]
+        wide = len(bits) == 32
+        width = 16 if wide else 8
+        img = Image.new('L', (width, 16))
+        img.putdata([255 if bits[y * (width // 8) + x // 8] & (0x80 >> (x % 8)) else 0
+                     for y in range(16) for x in range(width)])
+        img = img.resize((14 if wide else 7, 14), Image.Resampling.LANCZOS)
+        widths.extend((0, img.width, img.width))
+        if chr(code) in sample:
+            preview.paste(img, (sample.index(chr(code)) * 16 + 1, 1))
+        sheet, slot = divmod(index, 4096)
+        origin_x, origin_y = (slot % 64) * 16 + 1, (slot // 64) * 16 + 1
+        for y in range(14):
+            for x in range(img.width):
+                px, py = origin_x + x, origin_y + y
+                offset = sheet * 1024 * 1024 + (py // 8 * 128 + px // 8) * 64 + morton(px % 8, py % 8)
+                pixels[offset // 2] |= ((img.getpixel((x, y)) + 8) // 17) << ((offset % 2) * 4)
+    # Offsets refer to section bodies, as in ordinary unrelocated BCFNT files.
+    tglp = 20 + 32
+    texture_offset = 128
+    cwdh = texture_offset + len(pixels)
+    cwdh_size = (16 + len(widths) + 3) & ~3
+    cmap = cwdh + cwdh_size
+    cmap_size = (22 + len(codes) * 4 + 3) & ~3
+    total = cmap + cmap_size
+    assert total + 128 <= 0x332000, (len(codes), total)
+    result = bytearray(total)
+    struct.pack_into('<4sHHIII', result, 0, b'CFNT', 0xFEFF, 20, 0x03000000, total, 4)
+    struct.pack_into('<4sIBBH4BIII4B', result, 20, b'FINF', 32, 1, 16, codes.index(0xFFFD),
+                     0, 14, 14, 1, tglp + 8, cwdh + 8, cmap + 8, 14, 14, 12, 0)
+    struct.pack_into('<4sI4BI6HI', result, tglp, b'TGLP', cwdh - tglp, 15, 15, 14, 14,
+                     1024 * 1024 // 2, sheets, 11, 64, 64, 1024, 1024, texture_offset)
+    result[texture_offset:cwdh] = pixels
+    struct.pack_into('<4sIHHI', result, cwdh, b'CWDH', cwdh_size, 0, len(codes) - 1, 0)
+    result[cwdh + 16:cwdh + 16 + len(widths)] = widths
+    struct.pack_into('<4sI4HIH', result, cmap, b'CMAP', cmap_size, codes[0], codes[-1], 2, 0, 0, len(codes))
+    for index, code in enumerate(codes):
+        struct.pack_into('<HH', result, cmap + 22 + index * 4, code, index)
+    return bytes(result), codes, preview
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--zstd-library')
+    parser.add_argument('--output-dir', type=Path, default=ROOT / 'externals/open_source_archives/include')
+    parser.add_argument('--preview', type=Path)
+    args = parser.parse_args()
+    source = ROOT / 'externals/sdl2/SDL/test/unifont-13.0.06.hex'
+    data, codes, preview = build(source)
+    compressed = compress(data, args.zstd_library)
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    header = '// Azahar CJK Fallback; font data licensed OFL-1.1. Generated by tools/shared_font/generate_cjk.py\n#pragma once\ninline constexpr unsigned char CJK_FONT_ZSTD[] = {\n'
+    header += ''.join('    ' + ','.join(f'0x{x:02x}' for x in compressed[i:i+16]) + ',\n'
+                      for i in range(0, len(compressed), 16)) + '};\n'
+    (args.output_dir / 'cjk_font.bcfnt.zstd.h').write_text(header)
+    (args.output_dir / 'cjk_font.manifest.json').write_text(json.dumps({
+        'name': 'Azahar CJK Fallback', 'license': 'OFL-1.1', 'source': str(source.relative_to(ROOT)),
+        'source_sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
+        'bcfnt_sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data), 'glyphs': len(codes),
+        'ranges': RANGES, 'compressed_bytes': len(compressed)}, indent=2))
+    if args.preview:
+        preview.resize((preview.width * 4, 64), Image.Resampling.NEAREST).save(args.preview)
+    print(f'{len(codes)} glyphs, {len(data)} BCFNT bytes, {len(compressed)} compressed bytes')
+
+
+if __name__ == '__main__':
+    main()

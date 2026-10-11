@@ -1,0 +1,48 @@
+{
+  "name": "Azahar CJK Fallback",
+  "license": "OFL-1.1",
+  "source": "externals\\sdl2\\SDL\\test\\unifont-13.0.06.hex",
+  "source_sha256": "a009fec40b656e5875ca13aa88c4dd033155a089bfe7b0724767f65e7c96e666",
+  "bcfnt_sha256": "1ff8f93d150808d3798e58b0024dd4e5d027bcd4e5b0413fc806b3552f132db0",
+  "bytes": 3316032,
+  "glyphs": 24305,
+  "ranges": [
+    [
+      32,
+      591
+    ],
+    [
+      8192,
+      8303
+    ],
+    [
+      8352,
+      8703
+    ],
+    [
+      9472,
+      9983
+    ],
+    [
+      12288,
+      13311
+    ],
+    [
+      19968,
+      40959
+    ],
+    [
+      63744,
+      64255
+    ],
+    [
+      65280,
+      65519
+    ],
+    [
+      65533,
+      65533
+    ]
+  ],
+  "compressed_bytes": 970990
+}

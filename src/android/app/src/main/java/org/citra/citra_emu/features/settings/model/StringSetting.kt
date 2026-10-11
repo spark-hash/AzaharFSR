@@ -11,6 +11,7 @@ enum class StringSetting(
     override val section: String,
     override val defaultValue: String
 ) : AbstractStringSetting {
+    SHARED_FONT_FILE(SettingKeys.shared_font_file(), Settings.SECTION_UTILITY, ""),
     INIT_TIME(SettingKeys.init_time(), Settings.SECTION_SYSTEM, "946731601"),
     CAMERA_INNER_NAME(SettingKeys.camera_inner_name(), Settings.SECTION_CAMERA, "ndk"),
     CAMERA_INNER_CONFIG(SettingKeys.camera_inner_config(), Settings.SECTION_CAMERA, "_front"),
@@ -46,6 +47,7 @@ enum class StringSetting(
 
     companion object {
         private val NOT_RUNTIME_EDITABLE = listOf(
+            SHARED_FONT_FILE,
             INIT_TIME,
             CAMERA_INNER_NAME,
             CAMERA_INNER_CONFIG,

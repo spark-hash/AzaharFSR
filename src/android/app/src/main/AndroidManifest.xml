@@ -59,6 +59,7 @@
             </intent-filter>
         </activity>
 
+        <activity android:name="org.citra.citra_emu.features.settings.ui.SharedFontActivity" android:exported="false" />
         <activity
             android:name="org.citra.citra_emu.features.settings.ui.LsfgActivity"
             android:exported="false" />

@@ -23,6 +23,7 @@
 #include "core/hle/service/apt/apt_s.h"
 #include "core/hle/service/apt/apt_u.h"
 #include "core/hle/service/apt/bcfnt/bcfnt.h"
+#include "core/hle/service/apt/bcfnt/font_assets.h"
 #include "core/hle/service/apt/ns.h"
 #include "core/hle/service/apt/ns_c.h"
 #include "core/hle/service/apt/ns_s.h"
@@ -242,6 +243,13 @@ bool Module::LoadSharedFont() {
     romfs->Read(0, romfs_buffer.size(), romfs_buffer.data());
     romfs->Close();
 
+    if (Settings::values.shared_font_mode.GetValue() != 3 &&
+        FileSys::IsOpenSourceFontArchive(romfs_buffer)) {
+        if (Settings::values.shared_font_mode.GetValue() == 0 && LoadLegacySharedFont())
+            return true;
+        return LoadBuiltinSharedFont();
+    }
+
     const char16_t* file_name[4] = {u"cbf_std.bcfnt.lz", u"cbf_zh-Hans-CN.bcfnt.lz",
                                     u"cbf_ko-Hang-KR.bcfnt.lz", u"cbf_zh-Hant-TW.bcfnt.lz"};
     RomFS::RomFSFile font_file =
@@ -285,12 +293,51 @@ bool Module::LoadLegacySharedFont() {
 
     FileUtil::CreateFullPath(filepath); // Create path if not already created
     FileUtil::IOFile file(filepath, "rb");
-    if (file.IsOpen()) {
-        file.ReadBytes(shared_font_mem->GetPointer(), file.GetSize());
-        return true;
+    if (file.IsOpen() && file.GetSize() <= BCFNT::SharedFontMemorySize) {
+        std::vector<u8> bytes(file.GetSize());
+        if (file.ReadBytes(bytes.data(), bytes.size()) == bytes.size())
+            return InstallSharedFont(bytes);
     }
 
     return false;
+}
+
+bool Module::InstallSharedFont(std::span<const u8> data) {
+    auto font = BCFNT::NormalizeFont(data);
+    if (!font.error.empty()) {
+        LOG_ERROR(Service_APT, "Shared font validation failed: {}", font.error);
+        return false;
+    }
+    std::memset(shared_font_mem->GetPointer(), 0, BCFNT::SharedFontMemorySize);
+    u32_le header[32]{};
+    header[0] = 2;
+    const auto region = Service::CFG::GetModule(system)->GetRegionValue(false);
+    header[1] = region >= 4 && region <= 6 ? region - 2 : 1;
+    header[2] = static_cast<u32>(font.data.size());
+    std::memcpy(shared_font_mem->GetPointer(), header, sizeof(header));
+    std::memcpy(shared_font_mem->GetPointer(0x80), font.data.data(), font.data.size());
+    *shared_font_mem->GetPointer(0x83) = 'U';
+    return true;
+}
+
+bool Module::LoadBuiltinSharedFont() {
+    auto font = BCFNT::LoadBuiltinCjkFont();
+    if (!font.error.empty()) {
+        LOG_ERROR(Service_APT, "Builtin CJK font failed: {}", font.error);
+        return false;
+    }
+    LOG_INFO(Service_APT, "Loading builtin CJK shared font (24305 glyphs)");
+    return InstallSharedFont(font.data);
+}
+
+bool Module::LoadImportedSharedFont() {
+    auto font = BCFNT::LoadImportedFont(Settings::values.shared_font_file.GetValue());
+    if (!font.error.empty()) {
+        LOG_ERROR(Service_APT, "Imported shared font failed: {}; using builtin fallback", font.error);
+        return LoadBuiltinSharedFont();
+    }
+    LOG_INFO(Service_APT, "Loading selected imported shared font");
+    return InstallSharedFont(font.data);
 }
 
 void Module::APTInterface::GetSharedFont(Kernel::HLERequestContext& ctx) {
@@ -300,7 +347,9 @@ void Module::APTInterface::GetSharedFont(Kernel::HLERequestContext& ctx) {
     if (!apt->shared_font_loaded) {
         // On real 3DS, font loading happens on booting. However, we load it on demand to coordinate
         // with CFG region auto configuration, which happens later than APT initialization.
-        if (apt->LoadSharedFont()) {
+        const auto mode = Settings::values.shared_font_mode.GetValue();
+        if ((mode == 1 && apt->LoadBuiltinSharedFont()) ||
+            (mode == 2 && apt->LoadImportedSharedFont()) || apt->LoadSharedFont()) {
             apt->shared_font_loaded = true;
         } else if (apt->LoadLegacySharedFont()) {
             LOG_WARNING(Service_APT, "Loaded shared font by legacy method");

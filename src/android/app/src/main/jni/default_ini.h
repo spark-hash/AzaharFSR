@@ -418,6 +418,11 @@ lsfg_mode =
 )") DECLARE_KEY(layouts_to_cycle) BOOST_HANA_STRING(R"(
 
 [Utility]
+# Shared font: 0 automatic, 1 builtin CJK, 2 imported, 3 original behavior
+)") DECLARE_KEY(shared_font_mode) BOOST_HANA_STRING(R"(
+# SHA-256 identifier of an imported shared font
+)") DECLARE_KEY(shared_font_file) BOOST_HANA_STRING(R"(
+
 # Dumps textures as PNG to dump/textures/[Title ID]/.
 # 0 (default): Off, 1: On
 )") DECLARE_KEY(dump_textures) BOOST_HANA_STRING(R"(

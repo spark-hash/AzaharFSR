@@ -107,6 +107,19 @@ class GameGraphicsConfigTest {
         assertEquals("100", reloaded.effective("Renderer", "fsr_sharpness", global, "50"))
     }
 
+    @Test fun sharedFontSelectionSurvivesGlobalChangesAndReset() {
+        val global = GameGraphicsConfig("[Utility]\nshared_font_mode=0\nshared_font_file=global\n")
+        val game = GameGraphicsConfig("[Utility]\nshared_font_mode=2\nshared_font_file=local\n")
+        global.set("Utility", "shared_font_mode", "1")
+        val restored = GameGraphicsConfig(game.encode())
+        assertEquals("2", restored.effective("Utility", "shared_font_mode", global, "0"))
+        assertEquals("local", restored.effective("Utility", "shared_font_file", global, ""))
+        restored.set("Utility", "shared_font_mode", null)
+        restored.set("Utility", "shared_font_file", null)
+        assertEquals("1", restored.effective("Utility", "shared_font_mode", global, "0"))
+        assertEquals("global", restored.effective("Utility", "shared_font_file", global, ""))
+    }
+
     @Test fun lsfgOverrideSurvivesReloadAndResetRestoresInheritance() {
         val global = GameGraphicsConfig("[Renderer]\nlsfg_mode=1\n")
         val game = GameGraphicsConfig()

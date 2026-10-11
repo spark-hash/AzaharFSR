@@ -7,6 +7,7 @@
 #include <array>
 #include <memory>
 #include <string>
+#include <span>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
 #include <boost/serialization/vector.hpp>
@@ -21,6 +22,8 @@ enum class MediaType : u32;
 } // namespace Service::FS
 
 namespace FileSys {
+
+bool IsOpenSourceFontArchive(std::span<const u8> bytes);
 
 enum class NCCHFilePathType : u32 {
     RomFS = 0,
