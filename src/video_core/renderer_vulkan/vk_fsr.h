@@ -13,7 +13,8 @@ class DescriptorUpdateQueue;
 // Spatial EASU followed by RCAS, independently for each guest screen/eye.
 class Fsr final {
 public:
-    Fsr(const Instance& instance, Scheduler& scheduler, DescriptorUpdateQueue& updates);
+    Fsr(const Instance& instance, Scheduler& scheduler, DescriptorUpdateQueue& updates,
+        bool anime4k = false);
     ~Fsr();
     vk::ImageView Apply(u32 slot, vk::ImageView input, Common::Rectangle<float> crop, u32 width,
                         u32 height, float strength);
@@ -42,5 +43,6 @@ private:
     std::array<vk::UniquePipeline, 2> pipelines;
     std::array<Target, 3> targets{};
     bool available{};
+    const bool anime4k;
 };
 } // namespace Vulkan

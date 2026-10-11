@@ -3,6 +3,8 @@
 # Refer to the license.txt file included.
 
 set(SHADER_FILES
+    anime4k_enlarge.comp
+    anime4k_refine.comp
     aa_copy.comp
     fxaa.comp
     smaa_edges.comp

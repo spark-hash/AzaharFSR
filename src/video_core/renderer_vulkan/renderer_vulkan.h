@@ -140,6 +140,7 @@ private:
     DescriptorHeap present_heap;
     std::unique_ptr<AntiAliasing> antialiasing;
     std::unique_ptr<Fsr> fsr;
+    std::unique_ptr<Fsr> anime4k;
     vk::UniquePipelineLayout present_pipeline_layout;
     std::array<vk::Pipeline, PRESENT_PIPELINES> present_pipelines;
     std::array<vk::ShaderModule, PRESENT_PIPELINES> present_shaders;

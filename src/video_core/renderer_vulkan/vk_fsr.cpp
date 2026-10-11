@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include <string>
+#include <vk_mem_alloc.h>
 #include "common/logging/log.h"
+#include "video_core/host_shaders/anime4k_enlarge_comp.h"
+#include "video_core/host_shaders/anime4k_refine_comp.h"
 #include "video_core/host_shaders/ffx_a.h"
 #include "video_core/host_shaders/ffx_fsr1.h"
 #include "video_core/host_shaders/fsr_easu_comp.h"
@@ -10,7 +13,6 @@
 #include "video_core/renderer_vulkan/vk_instance.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_shader_util.h"
-#include <vk_mem_alloc.h>
 
 namespace Vulkan {
 namespace {
@@ -33,22 +35,27 @@ std::string Shader(std::string_view source) {
     return code;
 }
 } // namespace
-Fsr::Fsr(const Instance& instance_, Scheduler& scheduler_, DescriptorUpdateQueue& updates_)
+Fsr::Fsr(const Instance& instance_, Scheduler& scheduler_, DescriptorUpdateQueue& updates_,
+         bool anime4k_)
     : instance{instance_}, scheduler{scheduler_}, updates{updates_},
-      heap{instance, scheduler.GetMasterSemaphore(), bindings, 64} {
+      heap{instance, scheduler.GetMasterSemaphore(), bindings, 64}, anime4k{anime4k_} {
     const auto queues = instance.GetPhysicalDevice().getQueueFamilyProperties();
-    if (!(queues[instance.GetGraphicsQueueFamilyIndex()].queueFlags & vk::QueueFlagBits::eCompute)) {
-        LOG_WARNING(Render_Vulkan, "FSR 1 unavailable: presentation queue lacks compute support");
+    if (!(queues[instance.GetGraphicsQueueFamilyIndex()].queueFlags &
+          vk::QueueFlagBits::eCompute)) {
+        LOG_WARNING(Render_Vulkan,
+                    "Spatial upscaling unavailable: presentation queue lacks compute support");
         return;
     }
     const auto device = instance.GetDevice();
     const auto features = instance.GetPhysicalDevice()
-                              .getFormatProperties(vk::Format::eR8G8B8A8Unorm)
+                              .getFormatProperties((anime4k ? vk::Format::eR16G16B16A16Sfloat
+                                                            : vk::Format::eR8G8B8A8Unorm))
                               .optimalTilingFeatures;
     const auto required =
         vk::FormatFeatureFlagBits::eStorageImage | vk::FormatFeatureFlagBits::eSampledImage;
     if ((features & required) != required) {
-        LOG_WARNING(Render_Vulkan, "FSR 1 unavailable: RGBA8 storage/sample format unsupported");
+        LOG_WARNING(Render_Vulkan,
+                    "Spatial upscaling unavailable: Required storage/sample format unsupported");
         return;
     }
     const vk::PushConstantRange push{vk::ShaderStageFlagBits::eCompute, 0, sizeof(Parameters)};
@@ -62,11 +69,15 @@ Fsr::Fsr(const Instance& instance_, Scheduler& scheduler_, DescriptorUpdateQueue
                                           .addressModeU = vk::SamplerAddressMode::eClampToEdge,
                                           .addressModeV = vk::SamplerAddressMode::eClampToEdge,
                                           .addressModeW = vk::SamplerAddressMode::eClampToEdge});
-    const std::array sources{HostShaders::FSR_EASU_COMP, HostShaders::FSR_RCAS_COMP};
+    const std::array sources =
+        anime4k ? std::array{HostShaders::ANIME4K_ENLARGE_COMP, HostShaders::ANIME4K_REFINE_COMP}
+                : std::array{HostShaders::FSR_EASU_COMP, HostShaders::FSR_RCAS_COMP};
     for (u32 i = 0; i < 2; ++i) {
-        const auto spv = CompileGLSL(Shader(sources[i]), vk::ShaderStageFlagBits::eCompute);
+        const auto spv = CompileGLSL(anime4k ? std::string{sources[i]} : Shader(sources[i]),
+                                     vk::ShaderStageFlagBits::eCompute);
         if (spv.empty()) {
-            LOG_ERROR(Render_Vulkan, "FSR 1 shader compilation failed; using normal presentation");
+            LOG_ERROR(Render_Vulkan,
+                      "Spatial upscaling shader compilation failed; using normal presentation");
             return;
         }
         const auto module = CompileSPV(spv, device);
@@ -79,7 +90,10 @@ Fsr::Fsr(const Instance& instance_, Scheduler& scheduler_, DescriptorUpdateQueue
         device.destroyShaderModule(module);
     }
     available = true;
-    LOG_INFO(Render_Vulkan, "FSR 1 EASU and RCAS initialized (FP32)");
+    if (anime4k)
+        LOG_INFO(Render_Vulkan, "Anime4K Classic full-frame upscaling initialized (FP32)");
+    else
+        LOG_INFO(Render_Vulkan, "FSR 1 EASU and RCAS initialized (FP32)");
 }
 Fsr::~Fsr() {
     scheduler.Finish();
@@ -104,9 +118,12 @@ bool Fsr::Resize(Target& target, u32 width, u32 height) {
         return true;
     scheduler.Finish();
     Destroy(target);
-    for (auto& image : target.images) {
+    for (u32 index = 0; index < target.images.size(); ++index) {
+        auto& image = target.images[index];
+        const auto format =
+            anime4k && index == 0 ? vk::Format::eR16G16B16A16Sfloat : vk::Format::eR8G8B8A8Unorm;
         const vk::ImageCreateInfo info{.imageType = vk::ImageType::e2D,
-                                       .format = vk::Format::eR8G8B8A8Unorm,
+                                       .format = format,
                                        .extent = {width, height, 1},
                                        .mipLevels = 1,
                                        .arrayLayers = 1,
@@ -121,13 +138,14 @@ bool Fsr::Resize(Target& target, u32 width, u32 height) {
             // Earlier images may already have a queued layout transition.
             scheduler.Finish();
             Destroy(target);
-            LOG_WARNING(Render_Vulkan, "FSR 1 allocation failed; using normal presentation");
+            LOG_WARNING(Render_Vulkan,
+                        "Spatial upscaling allocation failed; using normal presentation");
             return false;
         }
         image.image = handle;
         image.view = instance.GetDevice().createImageView({.image = image.image,
                                                            .viewType = vk::ImageViewType::e2D,
-                                                           .format = vk::Format::eR8G8B8A8Unorm,
+                                                           .format = format,
                                                            .subresourceRange = range});
         scheduler.Record([handle = image.image](vk::CommandBuffer cmd) {
             const vk::ImageMemoryBarrier barrier{.dstAccessMask = vk::AccessFlagBits::eShaderWrite,
@@ -153,9 +171,9 @@ vk::ImageView Fsr::Apply(u32 slot, vk::ImageView input, Common::Rectangle<float>
         return {};
     const Parameters params{{crop.left, crop.top, crop.right, crop.bottom},
                             {static_cast<float>(width), static_cast<float>(height)},
-                            2.0f * (1.0f - strength)};
+                            anime4k ? strength : 2.0f * (1.0f - strength)};
     // Zero disables RCAS while retaining EASU upscaling.
-    const u32 pass_count = strength > 0.0f ? 2 : 1;
+    const u32 pass_count = anime4k || strength > 0.0f ? 2 : 1;
     for (u32 pass = 0; pass < pass_count; ++pass) {
         const auto set = heap.Commit();
         updates.AddImageSampler(set, 0, 0, pass == 0 ? input : target.images[0].view, *sampler);

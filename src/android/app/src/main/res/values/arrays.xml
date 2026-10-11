@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <integer-array name="upscalingValues" translatable="false"><item>0</item><item>1</item><item>2</item></integer-array>
     <string-array name="antiAliasingNames">
         <item>Off</item>
         <item>FXAA</item>

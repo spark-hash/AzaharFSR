@@ -207,6 +207,17 @@ void Config::ReadValues() {
     ReadSetting("Renderer", Settings::values.anti_aliasing);
     ReadSetting("Renderer", Settings::values.fsr_enabled);
     ReadSetting("Renderer", Settings::values.fsr_sharpness);
+    ReadSetting("Renderer", Settings::values.anime4k_strength);
+    // New choices take precedence within each scope. Preserve old per-game FSR
+    // overrides even when the global config already uses the new selector.
+    INIReader& upscale_reader =
+        game_config && (game_config->HasValue("Renderer", "upscaling_mode") ||
+                        game_config->HasValue("Renderer", "fsr_enabled"))
+            ? *game_config
+            : *android_config;
+    const auto legacy_mode = upscale_reader.GetBoolean("Renderer", "fsr_enabled", false) ? 1 : 0;
+    const auto mode = upscale_reader.GetInteger("Renderer", "upscaling_mode", legacy_mode);
+    Settings::values.upscaling_mode = static_cast<u32>(mode >= 0 && mode <= 2 ? mode : 0);
     ReadSetting("Renderer", Settings::values.use_integer_scaling);
 
     ReadSetting("Renderer", Settings::values.bg_red);

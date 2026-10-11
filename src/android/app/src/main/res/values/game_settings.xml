@@ -2,7 +2,7 @@
 <resources>
     <string name="game_graphics_settings">Game graphics settings</string>
     <string name="game_global_settings">Global settings</string>
-    <string name="game_settings_hint">Changes are saved for this game and take effect on its next launch. Unspecified options follow global settings. FSR and anti-aliasing require Vulkan. Install driver ZIPs in the global GPU driver manager before selecting them here.</string>
+    <string name="game_settings_hint">Changes are saved for this game and take effect on its next launch. Unspecified options follow global settings. Full-frame upscaling and anti-aliasing require Vulkan. Install driver ZIPs in the global GPU driver manager before selecting them here.</string>
     <string name="game_setting_use_global">Use global setting</string>
     <string name="game_setting_inherited">Global: %1$s</string>
     <string name="game_setting_override">This game: %1$s</string>

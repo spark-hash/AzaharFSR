@@ -116,7 +116,13 @@ class GameGraphicsActivity : AppCompatActivity() {
             R.array.antiAliasingNames,
             R.array.antiAliasingValues
         )
-        toggle(BooleanSetting.FSR_ENABLED, R.string.fsr_enabled)
+        choice(
+            IntSetting.UPSCALING_MODE,
+            R.string.upscaling_mode,
+            R.array.upscalingNames,
+            R.array.upscalingValues
+        )
+        number(IntSetting.ANIME4K_STRENGTH, R.string.anime4k_strength, 0.0, 100.0)
         number(IntSetting.FSR_SHARPNESS, R.string.fsr_sharpness, 0.0, 100.0)
         toggle(BooleanSetting.LINEAR_FILTERING, R.string.linear_filtering)
         toggle(BooleanSetting.USE_INTEGER_SCALING, R.string.use_integer_scaling)

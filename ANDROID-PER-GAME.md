@@ -7,7 +7,7 @@
 - 修改自动保存，**下次启动游戏时生效**。当前会话保留启动时的独立配置，不热切换渲染后端或驱动。
 - 「全部恢复为继承全局」清除当前游戏的覆盖项，不删除全局设置、游戏存档或已安装的驱动。
 
-图形范围包括 OpenGL ES / Vulkan、内部渲染分辨率、FSR 1 与锐化、FXAA / SMAA、过滤与纹理采样、速度限制、VSync、重复帧、硬件着色器与 JIT、SPIR-V 与优化、异步编译和呈现、磁盘着色器缓存、GPU 时序、渲染线程延迟、立体显示 / Cardboard、副屏透明度、背景颜色、纹理替换与预加载、纹理转储及渲染器调试。FSR / FXAA / SMAA 需要 Vulkan；Vulkan 不支持 Anime4K，启动兼容性处理只修改当前游戏的覆盖项。
+图形范围包括 OpenGL ES / Vulkan、内部渲染分辨率、全画面超分（关闭 / FSR 1 / Anime4K Classic 实验版）与各自强度、FXAA / SMAA、过滤与纹理采样、速度限制、VSync、重复帧、硬件着色器与 JIT、SPIR-V 与优化、异步编译和呈现、磁盘着色器缓存、GPU 时序、渲染线程延迟、立体显示 / Cardboard、副屏透明度、背景颜色、纹理替换与预加载、纹理转储及渲染器调试。全画面超分 / FXAA / SMAA 需要 Vulkan；原有 Anime4K 纹理滤镜仍不能在安卓 Vulkan 使用，启动兼容性处理只修改当前游戏的覆盖项。
 
 ## GPU 驱动
 
@@ -29,7 +29,7 @@
 
 ## 验证
 
-`GameGraphicsConfigTest` 的 5 个 JVM 测试覆盖游戏与全局隔离、继承后的全局更新、明确的关闭值、重启后驱动选择、恢复全局以及未编辑值的保留。测试命令：
+`GameGraphicsConfigTest` 的 7 个 JVM 测试覆盖游戏与全局隔离、继承后的全局更新、明确的关闭值、重启后驱动选择、恢复全局以及未编辑值的保留。测试命令：
 
 ```text
 ./gradlew :app:testVanillaRelWithDebInfoLiteUnitTest

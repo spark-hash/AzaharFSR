@@ -44,6 +44,11 @@ class Settings {
         if (!TextUtils.isEmpty(gameId)) {
             loadCustomGameSettings(gameId!!, view)
         }
+        val renderer = sections[SECTION_RENDERER]
+        if (renderer?.getSetting(IntSetting.UPSCALING_MODE.key) == null) {
+            IntSetting.UPSCALING_MODE.int = if (BooleanSetting.FSR_ENABLED.boolean) 1 else 0
+            renderer?.putSetting(IntSetting.UPSCALING_MODE)
+        }
         isLoaded = true
     }
 

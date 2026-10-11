@@ -98,6 +98,8 @@ foreach(KEY IN ITEMS
     "cardboard_y_shift"
     "filter_mode"
     "anti_aliasing"
+    "upscaling_mode"
+    "anime4k_strength"
     "fsr_enabled"
     "fsr_sharpness"
     "pp_shader_name"

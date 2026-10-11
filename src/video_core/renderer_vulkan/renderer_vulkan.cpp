@@ -1038,18 +1038,24 @@ void RendererVulkan::DrawScreens(Frame* frame, const Layout::FramebufferLayout& 
             const u32 height = screen.texture.height * scale;
             if (!enabled || !screen.image_view || width < 2 || height < 2)
                 continue;
-            const auto view = antialiasing->Apply(index, screen.image_view, texture_crop(screen), width,
-                                                  height, aa_mode);
+            const auto view = antialiasing->Apply(index, screen.image_view, texture_crop(screen),
+                                                  width, height, aa_mode);
             if (view) {
                 screen.image_view = view;
                 screen.texcoords = {0.f, 0.f, 1.f, 1.f};
             }
         }
     }
-    if (Settings::values.fsr_enabled.GetValue()) {
+#ifdef ANDROID
+    const auto upscale_mode = Settings::values.upscaling_mode.GetValue();
+#else
+    const u32 upscale_mode = Settings::values.fsr_enabled.GetValue() ? 1 : 0;
+#endif
+    if (upscale_mode != 0) {
         renderpass_cache.EndRendering();
-        if (!fsr)
-            fsr = std::make_unique<Fsr>(instance, scheduler, update_queue);
+        auto& upscaler = upscale_mode == 2 ? anime4k : fsr;
+        if (!upscaler)
+            upscaler = std::make_unique<Fsr>(instance, scheduler, update_queue, upscale_mode == 2);
         for (u32 index = 0; index < screen_infos.size(); ++index) {
             auto& screen = screen_infos[index];
             const auto& rectangle = index == 2 ? layout.bottom_screen : layout.top_screen;
@@ -1078,8 +1084,11 @@ void RendererVulkan::DrawScreens(Frame* frame, const Layout::FramebufferLayout& 
                 width < input_width || height < input_height ||
                 (width == input_width && height == input_height) || width < 2 || height < 2)
                 continue;
-            const auto view = fsr->Apply(index, screen.image_view, texture_crop(screen), width, height,
-                                         Settings::values.fsr_sharpness.GetValue() / 100.0f);
+            const float strength = (upscale_mode == 2 ? Settings::values.anime4k_strength.GetValue()
+                                                      : Settings::values.fsr_sharpness.GetValue()) /
+                                   100.0f;
+            const auto view = upscaler->Apply(index, screen.image_view, texture_crop(screen), width,
+                                              height, strength);
             if (view) {
                 screen.image_view = view;
                 screen.texcoords = {0.f, 0.f, 1.f, 1.f};

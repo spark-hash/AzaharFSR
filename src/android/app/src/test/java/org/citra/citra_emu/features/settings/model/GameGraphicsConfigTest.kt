@@ -67,4 +67,30 @@ class GameGraphicsConfigTest {
         assertEquals("system", restored.getOverride("GpuDriver", "selection"))
         assertNull(restored.getOverride("Renderer", "resolution_factor"))
     }
+
+    @Test fun legacyFsrMigratesAndCanReturnToInheritance() {
+        val global = GameGraphicsConfig("[Renderer]\nupscaling_mode=2\n")
+        val game = GameGraphicsConfig("[Renderer]\nfsr_enabled=true\n")
+        assertEquals("1", game.effective("Renderer", "upscaling_mode", global, "0"))
+        val restarted = GameGraphicsConfig(game.encode())
+        assertEquals("1", restarted.getOverride("Renderer", "upscaling_mode"))
+        restarted.set("Renderer", "upscaling_mode", null)
+        assertEquals("2", restarted.effective("Renderer", "upscaling_mode", global, "0"))
+        assertNull(restarted.getOverride("Renderer", "fsr_enabled"))
+    }
+
+    @Test fun explicitUpscalerWinsOverLegacyFsrAndPreservesStrength() {
+        val game =
+            GameGraphicsConfig(
+                "[Renderer]\nfsr_enabled=true\nupscaling_mode=0\nanime4k_strength=75\n"
+            )
+        assertEquals("0", game.getOverride("Renderer", "upscaling_mode"))
+        game.set("Renderer", "upscaling_mode", "2")
+        val restarted = GameGraphicsConfig(game.encode())
+        assertEquals("2", restarted.getOverride("Renderer", "upscaling_mode"))
+        assertEquals("75", restarted.getOverride("Renderer", "anime4k_strength"))
+        assertNull(restarted.getOverride("Renderer", "fsr_enabled"))
+        val off = GameGraphicsConfig("[Renderer]\nfsr_enabled=false\n")
+        assertEquals("0", off.getOverride("Renderer", "upscaling_mode"))
+    }
 }

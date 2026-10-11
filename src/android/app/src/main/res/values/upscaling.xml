@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="upscaling_mode">Upscaling algorithm (Vulkan)</string>
+    <string name="upscaling_description">Upscale the full game screen. FSR preserves detail; Anime4K refines contours and may lose texture detail. Applies when displayed size exceeds internal rendering size.</string>
+    <string name="anime4k_strength">Anime4K contour strength</string>
+    <string name="anime4k_description">Only affects full-frame Anime4K upscaling, not texture filtering. Higher strength may remove detail.</string>
+    <string-array name="upscalingNames"><item>Off</item><item>FSR 1</item><item>Anime4K Classic (Experimental)</item></string-array>
+</resources>

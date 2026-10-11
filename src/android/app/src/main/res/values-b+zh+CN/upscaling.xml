@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="upscaling_mode">超分算法（Vulkan）</string>
+    <string name="upscaling_description">放大整个游戏画面。FSR 偏向保留细节；Anime4K 强化轮廓，可能损失纹理。仅在显示尺寸大于内部渲染尺寸时生效。</string>
+    <string name="anime4k_strength">Anime4K 轮廓强度</string>
+    <string name="anime4k_description">仅影响 Anime4K 全画面超分，不影响纹理滤镜。较高强度可能损失细节。</string>
+    <string-array name="upscalingNames"><item>关闭</item><item>FSR 1</item><item>Anime4K Classic (实验)</item></string-array>
+</resources>

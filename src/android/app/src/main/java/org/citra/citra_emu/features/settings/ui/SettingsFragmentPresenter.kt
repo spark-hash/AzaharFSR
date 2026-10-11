@@ -1026,12 +1026,14 @@ class SettingsFragmentPresenter(private val fragmentView: SettingsFragmentView) 
                 )
             )
             add(
-                SwitchSetting(
-                    BooleanSetting.FSR_ENABLED,
-                    R.string.fsr_enabled,
-                    R.string.fsr_description,
-                    BooleanSetting.FSR_ENABLED.key,
-                    BooleanSetting.FSR_ENABLED.defaultValue
+                SingleChoiceSetting(
+                    IntSetting.UPSCALING_MODE,
+                    R.string.upscaling_mode,
+                    R.string.upscaling_description,
+                    R.array.upscalingNames,
+                    R.array.upscalingValues,
+                    IntSetting.UPSCALING_MODE.key,
+                    IntSetting.UPSCALING_MODE.defaultValue
                 )
             )
             add(
@@ -1044,6 +1046,18 @@ class SettingsFragmentPresenter(private val fragmentView: SettingsFragmentView) 
                     "%",
                     IntSetting.FSR_SHARPNESS.key,
                     IntSetting.FSR_SHARPNESS.defaultValue.toFloat()
+                )
+            )
+            add(
+                SliderSetting(
+                    IntSetting.ANIME4K_STRENGTH,
+                    R.string.anime4k_strength,
+                    R.string.anime4k_description,
+                    0,
+                    100,
+                    "%",
+                    IntSetting.ANIME4K_STRENGTH.key,
+                    IntSetting.ANIME4K_STRENGTH.defaultValue.toFloat()
                 )
             )
             add(
