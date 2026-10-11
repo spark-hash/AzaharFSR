@@ -77,6 +77,7 @@ android {
         externalNativeBuild {
             cmake {
                 arguments(
+                    "-DENABLE_BUILTIN_KEYBLOB=OFF", // Crypto material is supplied by the user
                     "-DENABLE_QT=0", // Don't use QT
                     "-DENABLE_SDL2=0", // Don't use SDL
                     "-DANDROID_ARM_NEON=true", // cryptopp requires Neon to work

@@ -9,6 +9,7 @@
 #include <boost/serialization/array.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
+#include <boost/serialization/version.hpp>
 #include "common/alignment.h"
 #include "common/common_types.h"
 #include "common/file_util.h"
@@ -47,6 +48,11 @@ class DirectRomFSReader : public RomFSReader {
 public:
     DirectRomFSReader(std::unique_ptr<FileUtil::IOFileBase>&& file) : file(std::move(file)) {}
 
+    DirectRomFSReader(std::unique_ptr<FileUtil::IOFileBase>&& file, const std::array<u8, 16>& key,
+                      const std::array<u8, 16>& ctr, u64 crypto_offset)
+        : file(std::move(file)), encrypted(true), key(key), ctr(ctr), crypto_offset(crypto_offset) {
+    }
+
     ~DirectRomFSReader() override = default;
 
     std::size_t GetSize() const override {
@@ -61,6 +67,10 @@ public:
 
 private:
     std::unique_ptr<FileUtil::IOFileBase> file;
+    bool encrypted{};
+    std::array<u8, 16> key{}, ctr{};
+    u64 crypto_offset{};
+    std::size_t ReadRaw(std::size_t offset, std::size_t length, u8* buffer);
 
     // Total cache size: 128KB
     static constexpr std::size_t cache_line_size = (1 << 13); // About 8KB
@@ -80,9 +90,15 @@ private:
                                                                  std::size_t length);
 
     template <class Archive>
-    void serialize(Archive& ar, const unsigned int) {
+    void serialize(Archive& ar, const unsigned int version) {
         ar& boost::serialization::base_object<RomFSReader>(*this);
         ar & file;
+        if (version >= 1) {
+            ar & encrypted;
+            ar & key;
+            ar & ctr;
+            ar & crypto_offset;
+        }
     }
     friend class boost::serialization::access;
 };
@@ -135,5 +151,6 @@ private:
 
 } // namespace FileSys
 
+BOOST_CLASS_VERSION(FileSys::DirectRomFSReader, 1)
 BOOST_CLASS_EXPORT_KEY(FileSys::DirectRomFSReader)
 BOOST_CLASS_EXPORT_KEY(FileSys::ArticRomFSReader)

@@ -370,6 +370,11 @@ private:
     bool is_tainted = false; // Are there parts of this container being overridden?
     bool is_loaded = false;
     bool is_compressed = false;
+    bool is_encrypted = false;
+    bool exefs_encrypted = false;
+    std::array<u8, 16> primary_key{}, secondary_key{};
+    std::array<u8, 16> exheader_ctr{}, exefs_ctr{}, romfs_ctr{};
+    Loader::ResultStatus InitializeCrypto();
 
     u32 partition = 0;
 

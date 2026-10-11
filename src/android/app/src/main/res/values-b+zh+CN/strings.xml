@@ -367,7 +367,8 @@
     <string name="preferences_theme">主题和色彩</string>
     <string name="preferences_layout">布局</string>
 
-    <string name="loader_error_encrypted">您的 ROM 是加密的</string>
+    <string name="loader_error_encrypted">解密数据缺失或不正确</string>
+    <string name="loader_error_encrypted_description">无法解密应用。请检查用户目录中的 sysdata/aes_keys.txt；使用 seed 加密的游戏还需要 sysdata/seeddb.bin。密钥、seed 或应用数据可能缺失或不正确。</string>
     <string name="loader_error_file_not_found">ROM 文件不存在</string>
     <string name="no_game_present">目前没有可启动的游戏！</string>
     <!-- Emulation Menu -->

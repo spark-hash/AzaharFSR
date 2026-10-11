@@ -1405,10 +1405,9 @@ bool GMainWindow::LoadROM(const QString& filename) {
 
         case Core::System::ResultStatus::ErrorLoader_ErrorEncrypted: {
             QMessageBox::critical(this, tr("Encrypted application"),
-                                  tr("Encrypted applications are not supported.<br/>"
-                                     "<a "
-                                     "href='https://azahar-emu.org/blog/game-loading-changes/'>"
-                                     "Please check our blog for more info.</a>"));
+                                  tr("The application could not be decrypted. Check sysdata/aes_keys.txt and, "
+                                     "for seed-encrypted titles, sysdata/seeddb.bin. "
+                                     "The keys or seed may be missing or incorrect."));
             break;
         }
         case Core::System::ResultStatus::ErrorLoader_ErrorInvalidFormat:

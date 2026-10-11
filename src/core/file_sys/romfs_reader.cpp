@@ -19,7 +19,19 @@ SERIALIZE_EXPORT_IMPL(FileSys::DirectRomFSReader)
 namespace FileSys {
 
 std::size_t DirectRomFSReader::ReadFile(std::size_t offset, std::size_t length, u8* buffer) {
+    if (offset >= GetSize())
+        return 0;
     length = std::min(length, GetSize() - offset);
+    const auto read = ReadRaw(offset, length, buffer);
+    if (encrypted && read != 0) {
+        CryptoPP::CTR_Mode<CryptoPP::AES>::Decryption dec(key.data(), key.size(), ctr.data());
+        dec.Seek(crypto_offset + offset);
+        dec.ProcessData(buffer, buffer, read);
+    }
+    return read;
+}
+
+std::size_t DirectRomFSReader::ReadRaw(std::size_t offset, std::size_t length, u8* buffer) {
     if (length == 0)
         return 0; // Crypto++ does not like zero size buffer
 
