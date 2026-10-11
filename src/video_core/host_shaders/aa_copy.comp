@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+#version 450
+layout(local_size_x=8, local_size_y=8) in;
+layout(binding=0) uniform sampler2D source;
+layout(binding=1, rgba8) writeonly uniform image2D destination;
+layout(binding=2) uniform sampler2D auxiliary;
+layout(binding=3) uniform sampler2D area;
+layout(binding=4) uniform sampler2D search_tex;
+layout(push_constant) uniform Parameters {
+    vec4 crop;
+    vec2 output_size;
+    float reserved;
+} params;
+void main() {
+    ivec2 p=ivec2(gl_GlobalInvocationID.xy);
+    if (any(greaterThanEqual(p, ivec2(params.output_size)))) return;
+    vec2 uv=(vec2(p)+0.5)/params.output_size;
+    vec2 pos=mix(params.crop.xy, params.crop.zw, uv);
+    vec2 half_pixel=0.5/vec2(textureSize(source,0));
+    pos=clamp(pos, params.crop.xy+half_pixel, params.crop.zw-half_pixel);
+    vec3 rgb=textureLod(source,pos,0).rgb;
+    // FXAA consumes perceptual luma in alpha; guest screen alpha is not presented.
+    imageStore(destination,p,vec4(rgb,dot(rgb,vec3(0.299,0.587,0.114))));
+}

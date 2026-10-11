@@ -42,3 +42,30 @@ This implementation was written with substantial assistance from OpenAI Codex.
 It is an experimental personal fork, not an upstream contribution. Azahar's
 AI-POLICY.md restricts substantial AI-written upstream contributions; no upstream
 pull request or issue was created.
+
+## FXAA and SMAA
+
+The Vulkan graphics settings now offer Off (default), FXAA 3.11 Quality preset 23,
+and SMAA 1x High. Windows and Android share the same implementation. Each visible
+screen/eye is normalized from its framebuffer crop, anti-aliased at its internal
+resolution, and then optionally upscaled by FSR. Anti-aliasing also works with FSR
+disabled, at native output size, and with downscaled output. OpenGL and software
+renderers bypass these effects.
+
+SMAA uses the upstream luma edge detection, area/search lookup tables, blending
+weight calculation, and neighborhood blending passes. This is spatial SMAA 1x;
+it does not use temporal reprojection. Compute adaptations replace fragment
+discard with a zero edge result and use explicit level-zero texture sampling.
+FXAA consumes perceptual luma stored in the normalized screen's alpha channel.
+Both output opaque RGB screens before layout composition.
+
+Sources and license notices are pinned in `externals/fxaa` and `externals/smaa`.
+See `tools/antialiasing` for shader and GPU readback regression checks.
+
+The five compute shaders passed Vulkan GLSL compilation. GPU readback on an
+RTX 5090 confirmed diagonal-edge smoothing, flat-color preservation after image
+reuse, and odd-dimension dispatch coverage for both algorithms. Windows Release
+and Android ARM64 RelWithDebInfoLite builds passed. SMAA plus FSR initialized and
+presented the Samus Returns title screen correctly on Windows. Further Windows
+runtime testing was stopped at the user's request. Android APK signature, ABI,
+alignment and manifest checks passed; Android gameplay remains untested on hardware.

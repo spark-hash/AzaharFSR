@@ -19,6 +19,7 @@ enum class IntSetting(
     CAMERA_OUTER_RIGHT_FLIP(SettingKeys.camera_outer_right_flip(), Settings.SECTION_CAMERA, 0),
     GRAPHICS_API(SettingKeys.graphics_api(), Settings.SECTION_RENDERER, 2),
     RESOLUTION_FACTOR(SettingKeys.resolution_factor(), Settings.SECTION_RENDERER, 1),
+    ANTI_ALIASING(SettingKeys.anti_aliasing(), Settings.SECTION_RENDERER, 0),
     FSR_SHARPNESS(SettingKeys.fsr_sharpness(), Settings.SECTION_RENDERER, 50),
     STEREOSCOPIC_3D_MODE(SettingKeys.render_3d(), Settings.SECTION_RENDERER, 2),
     STEREOSCOPIC_3D_DEPTH(SettingKeys.factor_3d(), Settings.SECTION_RENDERER, 0),

@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="anti_aliasing">Anti-aliasing (Vulkan)</string>
+    <string name="anti_aliasing_description">Smooth edges before FSR. FXAA is faster; SMAA preserves more detail.</string>
     <string name="fsr_enabled">FSR 1 (Vulkan)</string>
     <string name="fsr_description">Upscale and sharpen each screen using AMD FSR 1. Requires Vulkan and an internal resolution below the displayed screen size.</string>
     <string name="fsr_sharpness">FSR sharpness</string>

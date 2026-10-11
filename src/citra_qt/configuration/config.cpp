@@ -548,6 +548,7 @@ void QtConfig::ReadLayoutValues() {
     ReadGlobalSetting(Settings::values.swap_eyes_3d);
     ReadGlobalSetting(Settings::values.render_3d_which_display);
     ReadGlobalSetting(Settings::values.filter_mode);
+    ReadGlobalSetting(Settings::values.anti_aliasing);
     ReadGlobalSetting(Settings::values.fsr_enabled);
     ReadGlobalSetting(Settings::values.fsr_sharpness);
     ReadGlobalSetting(Settings::values.pp_shader_name);
@@ -1142,6 +1143,7 @@ void QtConfig::SaveLayoutValues() {
     WriteGlobalSetting(Settings::values.swap_eyes_3d);
     WriteGlobalSetting(Settings::values.render_3d_which_display);
     WriteGlobalSetting(Settings::values.filter_mode);
+    WriteGlobalSetting(Settings::values.anti_aliasing);
     WriteGlobalSetting(Settings::values.fsr_enabled);
     WriteGlobalSetting(Settings::values.fsr_sharpness);
     WriteGlobalSetting(Settings::values.pp_shader_name);

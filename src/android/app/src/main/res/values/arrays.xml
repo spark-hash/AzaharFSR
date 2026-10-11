@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string-array name="antiAliasingNames">
+        <item>Off</item>
+        <item>FXAA</item>
+        <item>SMAA 1x (High)</item>
+    </string-array>
+    <integer-array name="antiAliasingValues">
+        <item>0</item><item>1</item><item>2</item>
+    </integer-array>
 
     <string-array name="systemClockNames" translatable="true">
         <item>@string/device_clock</item>

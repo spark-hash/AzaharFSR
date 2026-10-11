@@ -108,6 +108,7 @@ void LogSettings() {
     log_setting("Renderer_SkipDuplicateFrames", values.use_skip_duplicate_frames.GetValue());
     log_setting("Renderer_PostProcessingShader", values.pp_shader_name.GetValue());
     log_setting("Renderer_FilterMode", values.filter_mode.GetValue());
+    log_setting("Renderer_AntiAliasing", values.anti_aliasing.GetValue());
     log_setting("Renderer_FSR1", values.fsr_enabled.GetValue());
     log_setting("Renderer_FSR1Sharpness", values.fsr_sharpness.GetValue());
     log_setting("Renderer_TextureFilter", GetTextureFilterName(values.texture_filter.GetValue()));
@@ -243,6 +244,7 @@ void RestoreGlobalState(bool is_powered_on) {
     values.swap_eyes_3d.SetGlobal(true);
     values.factor_3d.SetGlobal(true);
     values.filter_mode.SetGlobal(true);
+    values.anti_aliasing.SetGlobal(true);
     values.fsr_enabled.SetGlobal(true);
     values.fsr_sharpness.SetGlobal(true);
     values.pp_shader_name.SetGlobal(true);

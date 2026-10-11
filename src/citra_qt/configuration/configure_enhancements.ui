@@ -165,6 +165,14 @@
        </widget>
       </item>
       <item>
+       <widget class="QComboBox" name="anti_aliasing">
+        <property name="toolTip"><string>Smooth edges before FSR. Requires Vulkan. FXAA is faster; SMAA preserves more detail.</string></property>
+        <item><property name="text"><string>Anti-aliasing: Off</string></property></item>
+        <item><property name="text"><string>Anti-aliasing: FXAA</string></property></item>
+        <item><property name="text"><string>Anti-aliasing: SMAA 1x (High)</string></property></item>
+       </widget>
+      </item>
+      <item>
        <widget class="QCheckBox" name="toggle_fsr">
         <property name="text"><string>Enable FSR 1 (Vulkan)</string></property>
         <property name="toolTip"><string>Upscale each screen with AMD FSR 1 and sharpen it. Use a lower internal resolution than the displayed screen. Requires Vulkan.</string></property>

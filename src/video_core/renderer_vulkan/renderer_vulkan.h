@@ -54,6 +54,7 @@ struct ScreenInfo {
     vk::ImageView image_view;
 };
 
+class AntiAliasing;
 class Fsr;
 
 struct PresentUniformData {
@@ -137,6 +138,7 @@ private:
     RasterizerVulkan rasterizer;
     std::unique_ptr<PresentWindow> secondary_present_window_ptr;
     DescriptorHeap present_heap;
+    std::unique_ptr<AntiAliasing> antialiasing;
     std::unique_ptr<Fsr> fsr;
     vk::UniquePipelineLayout present_pipeline_layout;
     std::array<vk::Pipeline, PRESENT_PIPELINES> present_pipelines;

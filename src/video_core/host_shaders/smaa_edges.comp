@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+#version 450
+layout(local_size_x=8, local_size_y=8) in;
+layout(binding=0) uniform sampler2D source;
+layout(binding=1, rgba8) writeonly uniform image2D destination;
+layout(binding=2) uniform sampler2D auxiliary;
+layout(binding=3) uniform sampler2D area;
+layout(binding=4) uniform sampler2D search_tex;
+layout(push_constant) uniform Parameters {
+    vec4 crop;
+    vec2 output_size;
+    float reserved;
+} params;
+#define SMAA_GLSL_3 1
+#define SMAA_PRESET_HIGH 1
+#define SMAA_RT_METRICS vec4(1.0/params.output_size,params.output_size)
+// SMAA
+void main() {
+    ivec2 p=ivec2(gl_GlobalInvocationID.xy);
+    if (any(greaterThanEqual(p, ivec2(params.output_size)))) return;
+    vec2 uv=(vec2(p)+0.5)/params.output_size;
+    vec4 offset[3];
+    SMAAEdgeDetectionVS(uv,offset);
+    vec2 edges=SMAALumaEdgeDetectionPS(uv,offset,source);
+    imageStore(destination,p,vec4(edges,0,0));
+}

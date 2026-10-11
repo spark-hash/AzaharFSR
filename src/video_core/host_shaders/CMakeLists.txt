@@ -3,6 +3,11 @@
 # Refer to the license.txt file included.
 
 set(SHADER_FILES
+    aa_copy.comp
+    fxaa.comp
+    smaa_edges.comp
+    smaa_weights.comp
+    smaa_blend.comp
     fsr_easu.comp
     fsr_rcas.comp
     format_reinterpreter/d24s8_to_rgba8.frag
@@ -58,6 +63,16 @@ endforeach()
 foreach(FSR_HEADER ffx_a.h ffx_fsr1.h)
     set(SOURCE_FILE ${PROJECT_SOURCE_DIR}/externals/fsr1/${FSR_HEADER})
     set(SOURCE_HEADER_FILE ${SHADER_DIR}/${FSR_HEADER})
+    add_custom_command(OUTPUT ${SOURCE_HEADER_FILE}
+        COMMAND ${CMAKE_COMMAND} -P ${HEADER_GENERATOR} ${SOURCE_FILE} ${SOURCE_HEADER_FILE} ${INPUT_FILE}
+        DEPENDS ${SOURCE_FILE} ${INPUT_FILE} ${HEADER_GENERATOR})
+    list(APPEND SHADER_HEADERS ${SOURCE_HEADER_FILE})
+endforeach()
+
+foreach(AA_HEADER smaa/SMAA.hlsl fxaa/Fxaa3_11.h)
+    get_filename_component(AA_NAME ${AA_HEADER} NAME)
+    set(SOURCE_FILE ${PROJECT_SOURCE_DIR}/externals/${AA_HEADER})
+    set(SOURCE_HEADER_FILE ${SHADER_DIR}/${AA_NAME}.h)
     add_custom_command(OUTPUT ${SOURCE_HEADER_FILE}
         COMMAND ${CMAKE_COMMAND} -P ${HEADER_GENERATOR} ${SOURCE_FILE} ${SOURCE_HEADER_FILE} ${INPUT_FILE}
         DEPENDS ${SOURCE_FILE} ${INPUT_FILE} ${HEADER_GENERATOR})

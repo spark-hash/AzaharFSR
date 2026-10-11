@@ -173,6 +173,7 @@ void Config::ReadValues() {
     Settings::values.pp_shader_name =
         android_config->GetString("Renderer", "pp_shader_name", default_shader);
     ReadSetting("Renderer", Settings::values.filter_mode);
+    ReadSetting("Renderer", Settings::values.anti_aliasing);
     ReadSetting("Renderer", Settings::values.fsr_enabled);
     ReadSetting("Renderer", Settings::values.fsr_sharpness);
     ReadSetting("Renderer", Settings::values.use_integer_scaling);

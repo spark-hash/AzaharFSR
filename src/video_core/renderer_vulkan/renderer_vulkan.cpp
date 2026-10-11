@@ -12,6 +12,7 @@
 #include "video_core/gpu.h"
 #include "video_core/pica/pica_core.h"
 #include "video_core/renderer_vulkan/renderer_vulkan.h"
+#include "video_core/renderer_vulkan/vk_antialiasing.h"
 #include "video_core/renderer_vulkan/vk_fsr.h"
 #include "video_core/renderer_vulkan/vk_memory_util.h"
 #include "video_core/renderer_vulkan/vk_shader_util.h"
@@ -1015,6 +1016,30 @@ void RendererVulkan::DrawBottomScreen(const Layout::FramebufferLayout& layout,
 void RendererVulkan::DrawScreens(Frame* frame, const Layout::FramebufferLayout& layout,
                                  bool flipped) {
     const auto original_screens = screen_infos;
+    const auto aa_mode = Settings::values.anti_aliasing.GetValue();
+    if (aa_mode != 0) {
+        renderpass_cache.EndRendering();
+        if (!antialiasing)
+            antialiasing = std::make_unique<AntiAliasing>(instance, scheduler, update_queue);
+        for (u32 index = 0; index < screen_infos.size(); ++index) {
+            auto& screen = screen_infos[index];
+            const bool enabled =
+                (index == 2 ? layout.bottom_screen_enabled : layout.top_screen_enabled) ||
+                (layout.additional_screen_enabled &&
+                 layout.additional_screen_is_bottom == (index == 2));
+            const auto scale = GetResolutionScaleFactor();
+            const u32 width = screen.texture.width * scale;
+            const u32 height = screen.texture.height * scale;
+            if (!enabled || !screen.image_view || width < 2 || height < 2)
+                continue;
+            const auto view = antialiasing->Apply(index, screen.image_view, screen.texcoords, width,
+                                                  height, aa_mode);
+            if (view) {
+                screen.image_view = view;
+                screen.texcoords = {0.f, 0.f, 1.f, 1.f};
+            }
+        }
+    }
     if (Settings::values.fsr_enabled.GetValue()) {
         renderpass_cache.EndRendering();
         if (!fsr)

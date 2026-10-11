@@ -205,6 +205,9 @@ static const char* android_config_default_file_content = (BOOST_HANA_STRING(R"(
 # 0: Nearest, 1 (default): Linear
 )") DECLARE_KEY(filter_mode) BOOST_HANA_STRING(R"(
 
+# Vulkan anti-aliasing: 0 = Off, 1 = FXAA, 2 = SMAA 1x High.
+)") DECLARE_KEY(anti_aliasing) BOOST_HANA_STRING(R"(
+
 # Enable spatial FSR 1 EASU and RCAS in Vulkan when enlarging a screen.
 # 0 (default): Disabled, 1: Enabled
 )") DECLARE_KEY(fsr_enabled) BOOST_HANA_STRING(R"(

@@ -1015,6 +1015,17 @@ class SettingsFragmentPresenter(private val fragmentView: SettingsFragmentView) 
                 )
             )
             add(
+                SingleChoiceSetting(
+                    IntSetting.ANTI_ALIASING,
+                    R.string.anti_aliasing,
+                    R.string.anti_aliasing_description,
+                    R.array.antiAliasingNames,
+                    R.array.antiAliasingValues,
+                    IntSetting.ANTI_ALIASING.key,
+                    IntSetting.ANTI_ALIASING.defaultValue
+                )
+            )
+            add(
                 SwitchSetting(
                     BooleanSetting.FSR_ENABLED,
                     R.string.fsr_enabled,

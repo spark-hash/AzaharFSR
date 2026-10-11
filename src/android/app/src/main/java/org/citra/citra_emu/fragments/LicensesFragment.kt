@@ -55,6 +55,18 @@ class LicensesFragment : Fragment() {
 
         val licenses = listOf(
             License(
+                titleId = R.string.license_fxaa,
+                descriptionId = R.string.license_fxaa_description,
+                linkId = R.string.license_fxaa_link,
+                licenseId = R.string.license_fxaa_text
+            ),
+            License(
+                titleId = R.string.license_smaa,
+                descriptionId = R.string.license_smaa_description,
+                linkId = R.string.license_smaa_link,
+                licenseId = R.string.license_smaa_text
+            ),
+            License(
                 R.string.license_adreno_tools,
                 R.string.license_adreno_tools_description,
                 R.string.license_adreno_tools_link,

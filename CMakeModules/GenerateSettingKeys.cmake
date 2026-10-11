@@ -97,6 +97,7 @@ foreach(KEY IN ITEMS
     "cardboard_x_shift"
     "cardboard_y_shift"
     "filter_mode"
+    "anti_aliasing"
     "fsr_enabled"
     "fsr_sharpness"
     "pp_shader_name"
