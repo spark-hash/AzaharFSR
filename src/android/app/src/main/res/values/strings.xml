@@ -1133,7 +1133,8 @@
     <string name="performance_diagnostics">Performance diagnostics</string>
     <string name="performance_diagnostics_values">%1$s\nSpeed %2$.0f%%\nMemory %3$s MB · Free %4$d MB · Battery %5$.1f°C\nGPU %6$s</string>
     <string name="performance_fps_simple">FPS %1$.0f</string>
-    <string name="performance_fps_generated">FPS %1$.0f → %2$.0f · LSFG 2×</string>
+    <string name="performance_fps_generated">FPS %1$.0f → %2$.0f · LSFG %3$d×</string>
+    <string name="performance_secondary_fps">Second screen · %1$s</string>
     <string name="performance_fps_generation_status">FPS %1$.0f · LSFG: %2$s</string>
     <string name="performance_driver_turnip">Turnip</string>
     <string name="performance_driver_qualcomm">QCOM</string>

@@ -26,6 +26,7 @@ namespace {
     std::optional<Core::Instance> instance;
     std::optional<Vulkan> device;
     std::unordered_map<int32_t, Context> contexts;
+    int32_t host_context_id = 0;
 }
 
 void LSFG_3_1P::initialize(uint64_t deviceUUID,
@@ -123,14 +124,17 @@ void LSFG_3_1P::waitIdle() {
 
 void LSFG_3_1P::initializeOnDevice(VkInstance host, VkPhysicalDevice physical, VkDevice borrowed,
         uint32_t family, VkQueue queue, PFN_vkGetInstanceProcAddr loader, bool nullDescriptor,
-        float flowScale, const std::function<std::vector<uint8_t>(const std::string&)>& shaders) {
+        float flowScale, const std::function<std::vector<uint8_t>(const std::string&)>& shaders,
+        uint32_t generationCount) {
+    if (generationCount < 1 || generationCount > 3)
+        throw std::runtime_error("Host LSFG supports one to three generated frames");
     if (device.has_value()) throw std::runtime_error("LSFG is already initialized");
     volkInitializeCustom(loader);
     volkLoadInstance(host);
     volkLoadDevice(borrowed);
     instance.emplace(host);
     device.emplace(Vulkan{.device{physical, borrowed, family, queue, nullDescriptor},
-        .generationCount = 1, .flowScale = flowScale, .isHdr = false});
+        .generationCount = generationCount, .flowScale = flowScale, .isHdr = false});
     device->commandPool = Core::CommandPool(device->device);
     device->descriptorPool = Core::DescriptorPool(device->device);
     device->resources = Pool::ResourcePool(false, flowScale);
@@ -163,8 +167,18 @@ void LSFG_3_1P::initializeOnDevice(VkInstance host, VkPhysicalDevice physical, V
 int32_t LSFG_3_1P::createContextFromImages(VkImage in0, VkImage in1,
         const std::vector<VkImage>& outputs, VkExtent2D extent, VkFormat format) {
     if (!device.has_value()) throw std::runtime_error("LSFG is not initialized");
-    const int32_t id = 1;
-    contexts.emplace(id, Context(*device, in0, in1, outputs, extent, format));
+    if (outputs.empty() || outputs.size() > 3 || host_context_id == INT32_MAX)
+        throw std::runtime_error("Invalid host LSFG context or generation count");
+    const int32_t id = ++host_context_id;
+    const auto oldCount = device->generationCount;
+    device->generationCount = outputs.size();
+    try {
+        contexts.emplace(id, Context(*device, in0, in1, outputs, extent, format));
+    } catch (...) {
+        device->generationCount = oldCount;
+        throw;
+    }
+    device->generationCount = oldCount;
     return id;
 }
 

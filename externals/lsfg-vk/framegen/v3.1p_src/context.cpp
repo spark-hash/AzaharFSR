@@ -130,6 +130,7 @@ Context::Context(Vulkan& vk,
 
 void Context::present(Vulkan& vk,
         int inSem, const std::vector<int>& outSem) {
+    const auto generationCount = this->generate.getOutImages().size();
     auto& data = this->data.at(this->frameIdx % 8);
 
     // 3. wait for completion of previous frame in this slot
@@ -141,7 +142,7 @@ void Context::present(Vulkan& vk,
 
     // 1. create mipmaps and process input image
     if (inSem >= 0) data.inSemaphore = Core::Semaphore(vk.device, inSem);
-    for (size_t i = 0; i < vk.generationCount; i++)
+    for (size_t i = 0; i < generationCount; i++)
         data.internalSemaphores.at(i) = Core::Semaphore(vk.device);
 
     data.cmdBuffer1 = Core::CommandBuffer(vk.device, vk.commandPool);
@@ -170,7 +171,7 @@ void Context::present(Vulkan& vk,
         data.internalSemaphores, std::nullopt);
 
     // 2. generate intermediary frames
-    for (size_t pass = 0; pass < vk.generationCount; pass++) {
+    for (size_t pass = 0; pass < generationCount; pass++) {
         auto& internalSemaphore = data.internalSemaphores.at(pass);
         auto& outSemaphore = data.outSemaphores.at(pass);
         if (inSem >= 0) outSemaphore = Core::Semaphore(vk.device, outSem.empty() ? -1 : outSem.at(pass));
@@ -201,10 +202,10 @@ void Context::present(Vulkan& vk,
 #ifdef __ANDROID__
         {
             std::vector<VkImageMemoryBarrier2> releaseBarriers;
-            releaseBarriers.reserve(pass + 1 == vk.generationCount ? 3 : 1);
+            releaseBarriers.reserve(pass + 1 == generationCount ? 3 : 1);
             add_external_release(releaseBarriers, vk, this->generate.getOutImages().at(pass),
                 VK_ACCESS_2_SHADER_WRITE_BIT);
-            if (pass + 1 == vk.generationCount) {
+            if (pass + 1 == generationCount) {
                 add_external_release(releaseBarriers, vk, this->inImg_0, VK_ACCESS_2_SHADER_READ_BIT);
                 add_external_release(releaseBarriers, vk, this->inImg_1, VK_ACCESS_2_SHADER_READ_BIT);
             }

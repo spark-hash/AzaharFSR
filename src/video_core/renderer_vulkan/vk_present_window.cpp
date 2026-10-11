@@ -166,8 +166,7 @@ PresentWindow::~PresentWindow() {
         present_thread.join();
 #ifdef ANDROID
     lsfg.reset();
-    if (main_window)
-        SetLsfgStatus(0);
+    SetLsfgStatus(0, 0, main_window);
 #endif
     const vk::Device device = instance.GetDevice();
     // If the window is destroyed before the next_surface is
@@ -387,24 +386,33 @@ void PresentWindow::NotifySurfaceChanged() {
 
 void PresentWindow::CopyToSwapchain(Frame* frame) {
 #ifdef ANDROID
-    if (main_window && Settings::values.lsfg_mode.GetValue() != 0 && blit_supported) {
+    if (Settings::values.lsfg_mode.GetValue() != 0 && blit_supported) {
         if (!lsfg)
-            lsfg = std::make_unique<Lsfg>(instance, scheduler);
+            lsfg = std::make_unique<Lsfg>(instance, scheduler, main_window);
         const auto result = lsfg->Prepare(frame);
         if (result.consumed) {
-            if (result.generated) {
-                PresentImage(frame, result.generated, vk::ImageLayout::eGeneral, false, false);
-                std::this_thread::sleep_for(result.spacing);
+            const auto pace = [&] {
+                const auto deadline =
+                    std::max(std::chrono::steady_clock::now(), last_lsfg_present + result.spacing);
+                std::this_thread::sleep_until(deadline);
+                last_lsfg_present = deadline;
+            };
+            for (const auto generated : result.generated) {
+                pace();
+                PresentImage(frame, generated, vk::ImageLayout::eGeneral, false, false);
             }
+            if (!result.generated.empty())
+                pace();
             PresentImage(frame, result.real ? result.real : frame->image,
                          result.real ? vk::ImageLayout::eGeneral
                                      : vk::ImageLayout::eTransferSrcOptimal,
                          false, true);
             return;
         }
-    } else if (main_window) {
+    } else {
         lsfg.reset();
-        SetLsfgStatus(Settings::values.lsfg_mode.GetValue() ? 5 : 0);
+        last_lsfg_present = {};
+        SetLsfgStatus(Settings::values.lsfg_mode.GetValue() ? 5 : 0, 0, main_window);
     }
 #endif
     PresentImage(frame, frame->image, vk::ImageLayout::eTransferSrcOptimal, true, true);
@@ -558,8 +566,7 @@ void PresentWindow::PresentImage(Frame* frame, vk::Image source, vk::ImageLayout
         (void)instance.GetDevice().waitForFences(*temporary_fence, true, UINT64_MAX);
     }
 #ifdef ANDROID
-    if (main_window)
-        CountLsfgPresent(!final);
+    CountLsfgPresent(!final, main_window);
 #endif
 }
 

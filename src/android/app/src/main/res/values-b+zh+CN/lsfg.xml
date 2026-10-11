@@ -10,7 +10,7 @@
     <string name="lsfg_import_failed">导入失败： %1$s</string>
     <string name="lsfg_ready">着色器已导入，请在图形设置中启用 LSFG。</string>
     <string name="lsfg_missing">尚未导入着色器。</string>
-    <string-array name="lsfgNames"><item>关闭</item><item>LSFG 2× (30 → 60)</item></string-array>
-    <integer-array name="lsfgValues"><item>0</item><item>1</item></integer-array>
+    <string-array name="lsfgNames"><item>关闭</item><item>LSFG · 最高 60 FPS</item><item>LSFG · 最高 120 FPS</item></string-array>
+    <integer-array name="lsfgValues"><item>0</item><item>1</item><item>2</item></integer-array>
     <string-array name="lsfgStatus"><item>关闭</item><item>缺少帧生成文件</item><item>准备中</item><item>运行中</item><item>当前未插帧</item><item>无法启用</item></string-array>
 </resources>

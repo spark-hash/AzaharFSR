@@ -14,7 +14,8 @@ struct AHardwareBuffer;
 namespace LSFG_3_1P {
     void initializeOnDevice(VkInstance instance, VkPhysicalDevice physical, VkDevice device,
         uint32_t family, VkQueue queue, PFN_vkGetInstanceProcAddr loader, bool nullDescriptor,
-        float flowScale, const std::function<std::vector<uint8_t>(const std::string&)>& shaders);
+        float flowScale, const std::function<std::vector<uint8_t>(const std::string&)>& shaders,
+        uint32_t generationCount = 1);
     int32_t createContextFromImages(VkImage in0, VkImage in1, const std::vector<VkImage>& outputs,
         VkExtent2D extent, VkFormat format);
 

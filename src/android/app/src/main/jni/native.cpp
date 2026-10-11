@@ -1202,12 +1202,20 @@ JNIEXPORT void JNICALL
 Java_org_citra_citra_1emu_NativeLibrary_setLsfgShaderDirectory(JNIEnv* env, jclass, jstring path) {
     Vulkan::SetLsfgShaderDirectory(GetJString(env, path));
 }
-JNIEXPORT jdoubleArray JNICALL Java_org_citra_citra_1emu_NativeLibrary_getLsfgStats(JNIEnv* env,
-                                                                                    jclass) {
-    const auto stats = Settings::GetWorkingGraphicsAPI() == Settings::GraphicsAPI::Vulkan
-                           ? Vulkan::GetLsfgStats()
-                           : std::array<double, 4>{
-                                 0, 0, 0, Settings::values.lsfg_mode.GetValue() == 0 ? 0.0 : 5.0};
+JNIEXPORT void JNICALL Java_org_citra_citra_1emu_NativeLibrary_setLsfgDisplayRefreshRate(
+    JNIEnv*, jclass, jdouble rate, jboolean secondary) {
+    Vulkan::SetLsfgDisplayRefreshRate(rate, !secondary);
+}
+JNIEXPORT jint JNICALL Java_org_citra_citra_1emu_NativeLibrary_getActiveLsfgMode(JNIEnv*, jclass) {
+    return Settings::values.lsfg_mode.GetValue();
+}
+JNIEXPORT jdoubleArray JNICALL
+Java_org_citra_citra_1emu_NativeLibrary_getLsfgStats(JNIEnv* env, jclass, jboolean secondary) {
+    const auto stats =
+        Settings::GetWorkingGraphicsAPI() == Settings::GraphicsAPI::Vulkan
+            ? Vulkan::GetLsfgStats(!secondary)
+            : std::array<double, 5>{0, 0, 0, Settings::values.lsfg_mode.GetValue() == 0 ? 0.0 : 5.0,
+                                    1};
     const auto result = env->NewDoubleArray(stats.size());
     env->SetDoubleArrayRegion(result, 0, stats.size(), stats.data());
     return result;
@@ -1222,11 +1230,20 @@ JNIEXPORT void JNICALL Java_org_citra_citra_1emu_NativeLibrary_setLsfgShaderDire
                                                                                       jclass,
                                                                                       jstring) {}
 JNIEXPORT jdoubleArray JNICALL Java_org_citra_citra_1emu_NativeLibrary_getLsfgStats(JNIEnv* env,
-                                                                                    jclass) {
-    const double stats[4]{0, 0, 0, 5};
-    auto result = env->NewDoubleArray(4);
-    env->SetDoubleArrayRegion(result, 0, 4, stats);
+                                                                                    jclass,
+                                                                                    jboolean) {
+    const double stats[5]{0, 0, 0, 5, 1};
+    auto result = env->NewDoubleArray(5);
+    env->SetDoubleArrayRegion(result, 0, 5, stats);
     return result;
+}
+JNIEXPORT void JNICALL Java_org_citra_citra_1emu_NativeLibrary_setLsfgDisplayRefreshRate(JNIEnv*,
+                                                                                         jclass,
+                                                                                         jdouble,
+                                                                                         jboolean) {
+}
+JNIEXPORT jint JNICALL Java_org_citra_citra_1emu_NativeLibrary_getActiveLsfgMode(JNIEnv*, jclass) {
+    return 0;
 }
 #endif
 

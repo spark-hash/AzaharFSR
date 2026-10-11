@@ -2,7 +2,9 @@
 #include <fstream>
 #include <stdexcept>
 #include "common/logging/log.h"
+#include "common/settings.h"
 #include "video_core/renderer_vulkan/lsfg_assets.h"
+#include "video_core/renderer_vulkan/lsfg_policy.h"
 #include "video_core/renderer_vulkan/vk_instance.h"
 #include "video_core/renderer_vulkan/vk_lsfg.h"
 #include "video_core/renderer_vulkan/vk_present_window.h"
@@ -13,6 +15,8 @@
 
 namespace Vulkan {
 namespace {
+// All library operations are serialized by the shared Scheduler::submit_mutex.
+unsigned library_users{};
 constexpr vk::ImageSubresourceRange range{vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
 std::vector<uint8_t> LoadShader(const std::string& path, const std::string& name) {
     std::ifstream stream(path + "/" + name + ".spv", std::ios::binary | std::ios::ate);
@@ -29,15 +33,20 @@ std::vector<uint8_t> LoadShader(const std::string& path, const std::string& name
 }
 } // namespace
 
-Lsfg::Lsfg(const Instance& instance_, Scheduler& scheduler_)
-    : instance{instance_}, scheduler{scheduler_} {}
+Lsfg::Lsfg(const Instance& instance_, Scheduler& scheduler_, bool main_window_)
+    : instance{instance_}, scheduler{scheduler_}, main_window{main_window_} {}
 Lsfg::~Lsfg() {
     std::scoped_lock lock{scheduler.submit_mutex};
     Reset();
 }
+void Lsfg::Status(int state, double milliseconds) {
+    SetLsfgStatus(state, milliseconds, main_window, multiplier);
+}
 void Lsfg::Reset() {
     instance.GetGraphicsQueue().waitIdle();
-    if (initialized)
+    if (context >= 0)
+        LSFG_3_1P::deleteContext(context);
+    if (initialized && --library_users == 0)
         LSFG_3_1P::finalize();
     initialized = false;
     context = -1;
@@ -48,11 +57,13 @@ void Lsfg::Reset() {
         images[index] = nullptr;
         allocations[index] = nullptr;
     }
+    images.clear();
+    allocations.clear();
     history = false;
     slot = 0;
     previous = {};
 }
-void Lsfg::Create(u32 w, u32 h, const std::string& path) {
+void Lsfg::Create(u32 w, u32 h, const std::string& path, unsigned factor) {
     const auto physical = instance.GetPhysicalDevice();
     const auto features = physical.getFeatures();
     if (!instance.IsLsfgSupported() || !features.shaderStorageImageExtendedFormats ||
@@ -72,6 +83,9 @@ void Lsfg::Create(u32 w, u32 h, const std::string& path) {
     width = w;
     height = h;
     asset_path = path;
+    multiplier = factor;
+    images.resize(factor + 1);
+    allocations.resize(factor + 1);
     pool = instance.GetDevice().createCommandPoolUnique(
         vk::CommandPoolCreateInfo{.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
                                   .queueFamilyIndex = instance.GetGraphicsQueueFamilyIndex()});
@@ -103,7 +117,7 @@ void Lsfg::Create(u32 w, u32 h, const std::string& path) {
     }
     command.begin(
         vk::CommandBufferBeginInfo{.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
-    std::array<vk::ImageMemoryBarrier, 3> barriers;
+    std::vector<vk::ImageMemoryBarrier> barriers(images.size());
     for (std::size_t index = 0; index < images.size(); ++index) {
         barriers[index] = vk::ImageMemoryBarrier{.dstAccessMask = vk::AccessFlagBits::eMemoryRead |
                                                                   vk::AccessFlagBits::eMemoryWrite,
@@ -129,22 +143,31 @@ void Lsfg::Create(u32 w, u32 h, const std::string& path) {
     instance.GetGraphicsQueue().submit(
         vk::SubmitInfo{.commandBufferCount = 1, .pCommandBuffers = &command}, {});
     instance.GetGraphicsQueue().waitIdle();
-    initialized =
-        true; // Also clean up partially constructed shader pools if initialization throws.
-    LSFG_3_1P::initializeOnDevice(
-        instance.GetInstance(), physical, instance.GetDevice(),
-        instance.GetGraphicsQueueFamilyIndex(), instance.GetGraphicsQueue(),
-        VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr, instance.IsNullDescriptorSupported(),
-        1.0f, [path](const std::string& name) { return LoadShader(path, name); });
-    context = LSFG_3_1P::createContextFromImages(images[0], images[1], {images[2]}, {w, h},
-                                                 VK_FORMAT_R8G8B8A8_UNORM);
-    LOG_INFO(Render_Vulkan, "LSFG 3.1 Performance 2x initialized on Azahar Vulkan device");
+    if (library_users == 0) {
+        try {
+            LSFG_3_1P::initializeOnDevice(
+                instance.GetInstance(), physical, instance.GetDevice(),
+                instance.GetGraphicsQueueFamilyIndex(), instance.GetGraphicsQueue(),
+                VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr,
+                instance.IsNullDescriptorSupported(), 1.0f,
+                [path](const std::string& name) { return LoadShader(path, name); }, 3);
+        } catch (...) {
+            LSFG_3_1P::finalize();
+            throw;
+        }
+    }
+    ++library_users;
+    initialized = true;
+    context = LSFG_3_1P::createContextFromImages(
+        images[0], images[1], {images.begin() + 2, images.end()}, {w, h}, VK_FORMAT_R8G8B8A8_UNORM);
+    LOG_INFO(Render_Vulkan, "LSFG 3.1 Performance {}x initialized on Azahar Vulkan device ({})",
+             factor, main_window ? "main" : "secondary");
 }
 Lsfg::Result Lsfg::Prepare(Frame* frame) {
     Result result;
     const auto path = GetLsfgShaderDirectory();
     if (path.empty()) {
-        SetLsfgStatus(1);
+        Status(1);
         return result;
     }
     std::scoped_lock lock{scheduler.submit_mutex};
@@ -154,32 +177,39 @@ Lsfg::Result Lsfg::Prepare(Frame* frame) {
         asset_path = path;
     }
     if (failed) {
-        SetLsfgStatus(5);
+        Status(5);
         return result;
     }
     try {
         const auto interval = frame->source_time - previous;
-        if (initialized && (width != frame->width || height != frame->height))
+        const double refresh = GetLsfgDisplayRefreshRate(main_window);
+        const double input_seconds = std::chrono::duration<double>(interval).count();
+        const auto factor =
+            LsfgMultiplier(Settings::values.lsfg_mode.GetValue(), refresh, input_seconds);
+        if (initialized &&
+            (width != frame->width || height != frame->height || multiplier != factor))
             Reset();
-        if (interval > std::chrono::steady_clock::duration::zero() &&
-            interval < std::chrono::milliseconds(28)) {
+        if (factor == 1 || (interval > std::chrono::steady_clock::duration::zero() &&
+                            interval < std::chrono::milliseconds(14))) {
             if (initialized)
                 Reset();
             previous = frame->source_time;
-            SetLsfgStatus(4);
+            Status(4);
             return result;
         }
         if (!initialized)
-            Create(frame->width, frame->height, path);
+            Create(frame->width, frame->height, path, factor);
         instance.GetGraphicsQueue().waitIdle();
         const bool cadence_ok =
-            interval >= std::chrono::milliseconds(28) && interval <= std::chrono::milliseconds(70);
+            interval >= std::chrono::milliseconds(14) && interval <= std::chrono::milliseconds(70);
         const bool first_input = previous == std::chrono::steady_clock::time_point{};
         if (!cadence_ok) {
             if (history) {
                 LSFG_3_1P::deleteContext(context);
+                context = -1;
                 context = LSFG_3_1P::createContextFromImages(
-                    images[0], images[1], {images[2]}, {width, height}, VK_FORMAT_R8G8B8A8_UNORM);
+                    images[0], images[1], {images.begin() + 2, images.end()}, {width, height},
+                    VK_FORMAT_R8G8B8A8_UNORM);
             }
             history = false;
             slot = 0;
@@ -238,21 +268,23 @@ Lsfg::Result Lsfg::Prepare(Frame* frame) {
         result.consumed = true;
         instance.GetGraphicsQueue().waitIdle();
         result.real = images[slot];
-        // First version targets 30 -> 60. Native 60 FPS input is presented without interpolation.
         if (first_input || cadence_ok) {
             const auto start = std::chrono::steady_clock::now();
             LSFG_3_1P::presentContext(context, -1, {});
             LSFG_3_1P::waitIdle();
             const auto elapsed = std::chrono::steady_clock::now() - start;
             if (history && cadence_ok) {
-                result.generated = images[2];
-                result.spacing = interval / 2;
-                SetLsfgStatus(3, std::chrono::duration<double, std::milli>(elapsed).count());
+                result.generated.assign(images.begin() + 2, images.end());
+                result.spacing = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                    std::chrono::duration<double>(LsfgSpacing(factor,
+                        std::min(refresh, Settings::values.lsfg_mode.GetValue() == 1 ? 60.0 : 120.0),
+                        input_seconds)));
+                Status(3, std::chrono::duration<double, std::milli>(elapsed).count());
             } else {
-                SetLsfgStatus(2);
+                Status(2);
             }
         } else {
-            SetLsfgStatus(first_input || cadence_ok ? 2 : 4);
+            Status(first_input || cadence_ok ? 2 : 4);
         }
         previous = frame->source_time;
         history = first_input || cadence_ok;
@@ -263,8 +295,8 @@ Lsfg::Result Lsfg::Prepare(Frame* frame) {
         Reset();
         failed = true;
         result.real = nullptr;
-        result.generated = nullptr;
-        SetLsfgStatus(5);
+        result.generated.clear();
+        Status(5);
         return result;
     }
 }

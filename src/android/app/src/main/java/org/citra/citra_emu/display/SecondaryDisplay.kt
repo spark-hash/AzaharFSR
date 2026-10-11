@@ -19,6 +19,7 @@ import org.citra.citra_emu.NativeLibrary
 import org.citra.citra_emu.features.settings.model.BooleanSetting
 import org.citra.citra_emu.features.settings.model.IntSetting
 import org.citra.citra_emu.utils.Log
+import org.citra.citra_emu.utils.LsfgDisplay
 
 class SecondaryDisplay(val context: Context) : DisplayManager.DisplayListener {
     private var pres: SecondaryDisplayPresentation? = null
@@ -45,9 +46,17 @@ class SecondaryDisplay(val context: Context) : DisplayManager.DisplayListener {
     fun updateSurface() {
         val surface = pres?.getSurfaceHolder()?.surface
         if (surface != null && surface.isValid) {
+            updateRefreshRate()
             NativeLibrary.secondarySurfaceChanged(surface)
         } else {
             Log.warning("SecondaryDisplay Attempted to update null or invalid surface")
+        }
+    }
+    fun updateRefreshRate() {
+        if (currentDisplayId < 0) {
+            NativeLibrary.setLsfgDisplayRefreshRate(0.0, true)
+        } else {
+            pres?.updateRefreshRate()
         }
     }
 
@@ -132,6 +141,7 @@ class SecondaryDisplay(val context: Context) : DisplayManager.DisplayListener {
     }
 
     fun releasePresentation() {
+        NativeLibrary.setLsfgDisplayRefreshRate(0.0, true)
         try {
             pres?.dismiss()
         } catch (_: Exception) { }
@@ -161,6 +171,11 @@ class SecondaryDisplayPresentation(
 ) : Presentation(context, display) {
     private lateinit var surfaceView: SurfaceView
     private var touchscreenPointerId = -1
+    fun updateRefreshRate() {
+        if (::surfaceView.isInitialized) {
+            LsfgDisplay.update(surfaceView.holder.surface, display, true)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

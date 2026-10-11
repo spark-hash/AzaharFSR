@@ -4,7 +4,7 @@ Enable Performance diagnostics in the in-game overlay options menu. Enabling it 
 
 The panel refreshes once per second, uses multiple lines and is bounded by screen width. Existing overlay position settings apply. No phone installation or device testing was performed.
 
-- FPS counts game GSP frame submissions. With active LSFG, the same line shows game FPS → output presentation FPS and 2× frame generation. The output rate is measured from real and generated presentation counters; it is not assumed to be twice game FPS or the display refresh rate. When interpolation is inactive, the line shows its status instead.
+- FPS counts game GSP frame submissions. With active LSFG, the same line shows game FPS → output presentation FPS and the current 2×/3×/4× frame generation ratio. The output rate is measured from real and generated presentation counters; it is not assumed to equal a fixed multiple of game FPS or the display refresh rate. When interpolation is inactive, the line shows its status instead. An active independent second screen gets its own FPS line and status, measured from that window's presentation counters.
 - Speed is emulated time divided by elapsed wall time. 100% means normal emulation speed.
 - The four rows are FPS/frame generation, speed, memory/battery, and GPU driver. CPU stage timings and emulated system Hz are omitted. The configurable compact overlay also uses the merged FPS line, and its frame-time option shows only total processing time.
 - Memory uses process RSS and the actual OS page size (including 16 KB devices), displayed in binary megabytes. Failed reads display a dash. Free is Android available memory, including reclaimable memory.

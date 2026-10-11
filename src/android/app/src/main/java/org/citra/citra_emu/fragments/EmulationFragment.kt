@@ -86,6 +86,7 @@ import org.citra.citra_emu.utils.EmulationMenuSettings
 import org.citra.citra_emu.utils.GameHelper
 import org.citra.citra_emu.utils.GameIconUtils
 import org.citra.citra_emu.utils.Log
+import org.citra.citra_emu.utils.LsfgDisplay
 import org.citra.citra_emu.utils.ViewUtils
 import org.citra.citra_emu.viewmodel.EmulationViewModel
 
@@ -1544,6 +1545,7 @@ class EmulationFragment :
             val speed = 2
             val frametime = 3
             var lastLsfg = NativeLibrary.getLsfgStats()
+            var lastSecondaryLsfg = NativeLibrary.getLsfgStats(true)
             var lastPresentationTime = android.os.SystemClock.elapsedRealtime()
             perfStatsUpdater = Runnable {
                 val sb = StringBuilder()
@@ -1555,25 +1557,22 @@ class EmulationFragment :
                 val lsfg = NativeLibrary.getLsfgStats()
                 val now = android.os.SystemClock.elapsedRealtime()
                 val seconds = ((now - lastPresentationTime) / 1000.0).coerceAtLeast(0.001)
-                val frameGeneration = lsfg.size == 4 && lastLsfg.size == 4 &&
-                    lsfg[3].isFinite() && lsfg[3].toInt() != 0
-                val fpsText = if (frameGeneration) {
-                    val realFps = ((lsfg[0] - lastLsfg[0]) / seconds).coerceAtLeast(0.0)
-                    val outputFps = realFps +
-                        ((lsfg[1] - lastLsfg[1]) / seconds).coerceAtLeast(0.0)
-                    val states = resources.getStringArray(R.array.lsfgStatus)
-                    if (lsfg[3].toInt() == 3) {
-                        getString(R.string.performance_fps_generated, perfStats[fps], outputFps)
-                    } else {
-                        getString(
-                            R.string.performance_fps_generation_status,
-                            perfStats[fps],
-                            states[lsfg[3].toInt().coerceIn(states.indices)]
-                        )
-                    }
-                } else {
-                    getString(R.string.performance_fps_simple, perfStats[fps])
+                var fpsText = frameRateLabel(perfStats[fps], lsfg, lastLsfg, seconds)
+                val secondary = NativeLibrary.getLsfgStats(true)
+                val hasSecondScreen =
+                    emulationActivity.secondaryDisplayManager.currentDisplayId >= 0
+                if (diagnostics && hasSecondScreen &&
+                    secondary.size == 5 && lastSecondaryLsfg.size == 5
+                ) {
+                    val realFps = ((secondary[0] - lastSecondaryLsfg[0]) / seconds).coerceAtLeast(
+                        0.0
+                    )
+                    fpsText += "\n" + getString(
+                        R.string.performance_secondary_fps,
+                        frameRateLabel(realFps, secondary, lastSecondaryLsfg, seconds)
+                    )
                 }
+                lastSecondaryLsfg = secondary
                 lastLsfg = lsfg
                 lastPresentationTime = now
                 if (diagnostics) {
@@ -1661,6 +1660,32 @@ class EmulationFragment :
         }
     }
 
+    private fun frameRateLabel(
+        fps: Double,
+        stats: DoubleArray,
+        last: DoubleArray,
+        seconds: Double
+    ): String {
+        if (stats.size != 5 || last.size != 5 || !stats[3].isFinite() || stats[3].toInt() == 0) {
+            return getString(R.string.performance_fps_simple, fps)
+        }
+        val states = resources.getStringArray(R.array.lsfgStatus)
+        if (stats[3].toInt() != 3) {
+            return getString(
+                R.string.performance_fps_generation_status,
+                fps,
+                states[stats[3].toInt().coerceIn(states.indices)]
+            )
+        }
+        val output = ((stats[0] - last[0] + stats[1] - last[1]) / seconds).coerceAtLeast(0.0)
+        return getString(
+            R.string.performance_fps_generated,
+            fps,
+            output,
+            stats[4].toInt().coerceIn(2, 4)
+        )
+    }
+
     private fun activeDriverLabel(): String {
         val info = NativeLibrary.getActiveDriverInfo()
         if (info.size != 3 || info[0].isBlank()) return "—"
@@ -1739,6 +1764,7 @@ class EmulationFragment :
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+        LsfgDisplay.update(holder.surface, binding.surfaceEmulation.display, false)
         Log.debug("[EmulationFragment] Surface changed. Resolution: " + width + "x" + height)
         emulationState.newSurface(holder.surface)
     }
@@ -1748,9 +1774,21 @@ class EmulationFragment :
     }
 
     override fun doFrame(frameTimeNanos: Long) {
+        if (frameTimeNanos - lastRefreshUpdate >= 500_000_000L) {
+            lastRefreshUpdate = frameTimeNanos
+            if (_binding != null) {
+                LsfgDisplay.update(
+                    binding.surfaceEmulation.holder.surface,
+                    binding.surfaceEmulation.display,
+                    false
+                )
+                emulationActivity.secondaryDisplayManager.updateRefreshRate()
+            }
+        }
         Choreographer.getInstance().postFrameCallback(this)
         NativeLibrary.doFrame()
     }
+    private var lastRefreshUpdate = 0L
 
     private val applyCutoutInsets: (View, WindowInsetsCompat) -> WindowInsetsCompat = {
             v,

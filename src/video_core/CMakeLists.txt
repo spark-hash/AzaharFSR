@@ -209,7 +209,8 @@ if (ENABLE_VULKAN)
     target_link_libraries(video_core PRIVATE vulkan-headers vma sirit SPIRV glslang)
     if (ANDROID)
         target_sources(video_core PRIVATE renderer_vulkan/vk_lsfg.cpp renderer_vulkan/vk_lsfg.h
-            renderer_vulkan/lsfg_assets.cpp renderer_vulkan/lsfg_assets.h)
+            renderer_vulkan/lsfg_assets.cpp renderer_vulkan/lsfg_assets.h
+            renderer_vulkan/lsfg_policy.h)
         target_link_libraries(video_core PRIVATE azahar_lsfg)
         target_include_directories(video_core PRIVATE ${PROJECT_SOURCE_DIR}/externals/lsfg-vk/include)
     endif()

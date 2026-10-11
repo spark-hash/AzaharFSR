@@ -90,6 +90,7 @@ private:
     bool main_window;
 #ifdef ANDROID
     std::unique_ptr<Lsfg> lsfg;
+    std::chrono::steady_clock::time_point last_lsfg_present{};
 #endif
     vk::SurfaceKHR surface;
     vk::SurfaceKHR next_surface{};

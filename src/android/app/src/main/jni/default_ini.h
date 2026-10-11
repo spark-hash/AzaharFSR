@@ -210,7 +210,8 @@ static const char* android_config_default_file_content = (BOOST_HANA_STRING(R"(
 
 # Vulkan full-frame upscaler: 0 = Off, 1 = FSR 1, 2 = Anime4K Classic.
 )") DECLARE_KEY(lsfg_mode) BOOST_HANA_STRING(R"(
-# LSFG 3.1 Performance: 0 = off, 1 = 2x for 30 FPS input (requires imported shaders).
+# LSFG 3.1 Performance: 0 = off, 1 = up to 60 FPS, 2 = up to 120 FPS.
+# Requires imported shaders; each screen is capped by its current display refresh rate.
 # This is frame interpolation, not a simulation-speed change.
 lsfg_mode =
 

@@ -187,7 +187,9 @@ object NativeLibrary {
 
     external fun importLsfgShaders(dll: String, output: String): String
     external fun setLsfgShaderDirectory(path: String)
-    external fun getLsfgStats(): DoubleArray
+    external fun getLsfgStats(secondary: Boolean = false): DoubleArray
+    external fun setLsfgDisplayRefreshRate(rate: Double, secondary: Boolean)
+    external fun getActiveLsfgMode(): Int
 
     // Surface Handling
     external fun surfaceChanged(surf: Surface)

@@ -627,7 +627,7 @@ struct Values {
     SwitchableSetting<u32, true> anti_aliasing{0, 0, 2, Keys::anti_aliasing};
     SwitchableSetting<u32, true> shared_font_mode{0, 0, 3, Keys::shared_font_mode};
     Setting<std::string> shared_font_file{"", Keys::shared_font_file};
-    SwitchableSetting<u32, true> lsfg_mode{0, 0, 1, Keys::lsfg_mode};
+    SwitchableSetting<u32, true> lsfg_mode{0, 0, 2, Keys::lsfg_mode};
     SwitchableSetting<u32, true> upscaling_mode{0, 0, 2, Keys::upscaling_mode};
     SwitchableSetting<u32, true> anime4k_strength{60, 0, 100, Keys::anime4k_strength};
     SwitchableSetting<bool> fsr_enabled{false, Keys::fsr_enabled};

@@ -835,7 +835,8 @@
         <string name="performance_diagnostics">性能诊断</string>
     <string name="performance_diagnostics_values">%1$s\n模拟速度 %2$.0f%%\n内存 %3$s MB · 可用 %4$d MB · 电池 %5$.1f°C\nGPU %6$s</string>
     <string name="performance_fps_simple">FPS %1$.0f</string>
-    <string name="performance_fps_generated">FPS %1$.0f → %2$.0f · 帧生成 2×</string>
+    <string name="performance_fps_generated">FPS %1$.0f → %2$.0f · 帧生成 %3$d×</string>
+    <string name="performance_secondary_fps">副屏 · %1$s</string>
     <string name="performance_fps_generation_status">FPS %1$.0f · 帧生成：%2$s</string>
     <string name="performance_driver_turnip">萝卜</string>
     <string name="performance_driver_qualcomm">高通</string>

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include <atomic>
+#include <cmath>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -14,9 +15,13 @@ namespace Vulkan {
 namespace {
 std::mutex asset_mutex;
 std::string shader_directory;
-std::atomic<unsigned long long> real_presentations{}, generated_presentations{};
-std::atomic<double> generation_ms{};
-std::atomic<int> status{};
+struct DisplayStats {
+    std::atomic<unsigned long long> real{}, generated{};
+    std::atomic<double> milliseconds{}, refresh_rate{};
+    std::atomic<int> status{};
+    std::atomic<unsigned> multiplier{1};
+};
+std::array<DisplayStats, 2> display_stats;
 // Resource numbers used by LSFG 3.1 Performance's FP32 shader chain.
 const std::map<std::string, unsigned> shaders{
     {"p_mipmaps", 255},  {"p_generate", 256}, {"p_alpha[0]", 290}, {"p_alpha[1]", 291},
@@ -99,19 +104,30 @@ std::string ImportLsfgShaders(const std::string& dll, const std::string& output)
         return error.what();
     }
 }
-std::array<double, 4> GetLsfgStats() {
-    return {static_cast<double>(real_presentations.load()),
-            static_cast<double>(generated_presentations.load()), generation_ms.load(),
-            static_cast<double>(status.load())};
+std::array<double, 5> GetLsfgStats(bool main_window) {
+    const auto& stats = display_stats[main_window ? 0 : 1];
+    return {static_cast<double>(stats.real.load()), static_cast<double>(stats.generated.load()),
+            stats.milliseconds.load(), static_cast<double>(stats.status.load()),
+            static_cast<double>(stats.multiplier.load())};
 }
-void CountLsfgPresent(bool generated) {
+void SetLsfgDisplayRefreshRate(double rate, bool main_window) {
+    if (std::isfinite(rate) && rate >= 0 && rate <= 1000)
+        display_stats[main_window ? 0 : 1].refresh_rate = rate;
+}
+double GetLsfgDisplayRefreshRate(bool main_window) {
+    return display_stats[main_window ? 0 : 1].refresh_rate.load();
+}
+void CountLsfgPresent(bool generated, bool main_window) {
+    auto& stats = display_stats[main_window ? 0 : 1];
     if (generated)
-        ++generated_presentations;
+        ++stats.generated;
     else
-        ++real_presentations;
+        ++stats.real;
 }
-void SetLsfgStatus(int state, double milliseconds) {
-    status = state;
-    generation_ms = milliseconds;
+void SetLsfgStatus(int state, double milliseconds, bool main_window, unsigned multiplier) {
+    auto& stats = display_stats[main_window ? 0 : 1];
+    stats.status = state;
+    stats.milliseconds = milliseconds;
+    stats.multiplier = multiplier;
 }
 } // namespace Vulkan
