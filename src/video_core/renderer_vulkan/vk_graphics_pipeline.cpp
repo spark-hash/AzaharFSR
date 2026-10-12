@@ -12,6 +12,7 @@
 #include "video_core/renderer_vulkan/vk_instance.h"
 #include "video_core/renderer_vulkan/vk_render_manager.h"
 #include "video_core/renderer_vulkan/vk_shader_util.h"
+#include "video_core/shader_compilation_stats.h"
 
 namespace Vulkan {
 
@@ -107,6 +108,7 @@ bool GraphicsPipeline::TryBuild(bool wait_built) {
 }
 
 bool GraphicsPipeline::Build(bool fail_on_compile_required) {
+    VideoCore::ShaderCompilationScope compilation{!fail_on_compile_required};
     MICROPROFILE_SCOPE(Vulkan_Pipeline);
 
     const u32 stride_alignment = instance.GetMinVertexStrideAlignment();

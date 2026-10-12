@@ -27,6 +27,21 @@ class DriverSummaryTest {
         assertEquals("", DriverSummary.version("OpenGL", "OpenGL ES 3.2"))
     }
 
+    @Test fun qualcommVulkanInfoOverridesPackedFallbackVersion() {
+        assertEquals("800.42.0", DriverSummary.version("Vulkan", "512.744.0 V@800.42.0 (build)"))
+    }
+
+    @Test fun mesaVulkanBuildHashIsOmitted() {
+        assertEquals(
+            "25.1.0-devel",
+            DriverSummary.version("Vulkan", "25.1.0 Mesa 25.1.0-devel (git-abcdef1234)")
+        )
+    }
+
+    @Test fun unknownVulkanTextIsNotTruncatedIntoAnInventedVersion() {
+        assertEquals("", DriverSummary.version("Vulkan", "custom build abcdef1234"))
+    }
+
     @Test fun vulkanVersionAndUnknownNamesAreBounded() {
         assertEquals("512.744.0", DriverSummary.version("Vulkan", "512.744.0"))
         assertEquals(16, DriverSummary.family("abcdefghijklmnopqrst", "").length)

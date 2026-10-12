@@ -1547,6 +1547,7 @@ class EmulationFragment :
             val frametime = 3
             var lastLsfg = NativeLibrary.getLsfgStats()
             var lastSecondaryLsfg = NativeLibrary.getLsfgStats(true)
+            var lastShaderStats = NativeLibrary.getShaderCompilationStats()
             var lastPresentationTime = android.os.SystemClock.elapsedRealtime()
             perfStatsUpdater = Runnable {
                 val sb = StringBuilder()
@@ -1566,26 +1567,36 @@ class EmulationFragment :
                     secondary.size == 6 && lastSecondaryLsfg.size == 6
                 ) {
                     val rates = PresentationRates.measure(secondary, lastSecondaryLsfg, seconds)
-                    val states = resources.getStringArray(R.array.lsfgStatus)
-                    val state = secondary[3].toInt().coerceIn(states.indices)
-                    val generation = if (state == 3) "2×" else states[state]
                     fpsText += "\n" + getString(
                         R.string.performance_secondary_fps,
                         if (rates == null) {
                             getString(R.string.performance_secondary_unavailable)
                         } else {
-                            getString(
-                                R.string.performance_secondary_rates,
-                                rates.source,
-                                rates.output,
-                                generation
-                            )
+                            if (secondary[3].toInt() == 3) {
+                                getString(
+                                    R.string.performance_fps_generated,
+                                    rates.source,
+                                    rates.output,
+                                    2
+                                )
+                            } else {
+                                getString(R.string.performance_fps_simple, rates.source)
+                            }
                         }
                     )
                 }
                 lastSecondaryLsfg = secondary
                 lastLsfg = lsfg
                 lastPresentationTime = now
+                val shaderStats = NativeLibrary.getShaderCompilationStats()
+                if (diagnostics && shaderStats.size == 2 && lastShaderStats.size == 2) {
+                    if (shaderStats[0] > 0) {
+                        fpsText += "\n" + getString(R.string.performance_shaders_compiling)
+                    } else if (shaderStats[1] > lastShaderStats[1]) {
+                        fpsText += "\n" + getString(R.string.performance_shaders_recent)
+                    }
+                }
+                lastShaderStats = shaderStats
                 if (diagnostics) {
                     val ram = processResidentMiB()?.toString() ?: "—"
                     val memory = ActivityManager.MemoryInfo()
@@ -1708,7 +1719,15 @@ class EmulationFragment :
             else -> family
         }
         val version = DriverSummary.version(info[0], info[2])
-        return listOf(info[0], name, version).filter { it.isNotBlank() }.joinToString(" · ")
+        val backend = if (info[0] == "Vulkan") {
+            "VK"
+        } else if (info[0] == "OpenGL") {
+            "GL"
+        } else {
+            info[0]
+        }
+        val versionLabel = if (version.isBlank()) "" else "v$version"
+        return listOf(backend, name, versionLabel).filter { it.isNotBlank() }.joinToString(" · ")
     }
 
     private fun processResidentMiB(): Long? = runCatching {

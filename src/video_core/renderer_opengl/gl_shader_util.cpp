@@ -10,10 +10,12 @@
 #include "common/logging/log.h"
 #include "video_core/renderer_opengl/gl_shader_util.h"
 #include "video_core/renderer_opengl/gl_vars.h"
+#include "video_core/shader_compilation_stats.h"
 
 namespace OpenGL {
 
 GLuint LoadShader(std::string_view source, GLenum type, const std::string& debug_name) {
+    VideoCore::ShaderCompilationScope compilation;
     std::string preamble;
     if (GLES) {
         preamble = R"(#version 320 es
@@ -85,6 +87,7 @@ GLuint LoadShader(std::string_view source, GLenum type, const std::string& debug
 
 GLuint LoadProgram(bool separable_program, std::span<const GLuint> shaders,
                    const std::string& debug_name) {
+    VideoCore::ShaderCompilationScope compilation;
     // Link the program
     LOG_DEBUG(Render_OpenGL, "Linking program...");
 

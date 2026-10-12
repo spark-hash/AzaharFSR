@@ -131,7 +131,8 @@ RendererVulkan::RendererVulkan(Core::System& system, Pica::PicaCore& pica_,
                                          main_present_window.ImageCount()},
       present_heap{instance, scheduler.GetMasterSemaphore(), PRESENT_BINDINGS, 32} {
     VideoCore::SetActiveDriverInfo(
-        {"Vulkan", std::string{instance.GetVendorName()}, instance.GetDriverVersionName()});
+        {"Vulkan", std::string{instance.GetVendorName()},
+         fmt::format("{} {}", instance.GetDriverVersionName(), instance.GetDriverInfoName())});
     CompileShaders();
     BuildLayouts();
     BuildPipelines();

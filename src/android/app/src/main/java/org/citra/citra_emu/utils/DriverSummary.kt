@@ -15,6 +15,12 @@ object DriverSummary {
             ?: Regex("Mesa\\s+([0-9]+(?:\\.[0-9]+)+(?:-devel)?)", RegexOption.IGNORE_CASE)
                 .find(value)?.groupValues?.get(1)
         // The first number in a GL_VERSION string is the API version, not the driver version.
-        return (vendorVersion ?: if (backend == "Vulkan") value.trim() else "").take(24)
+        val numericVersion = if (backend == "Vulkan") {
+            Regex("^\\s*([0-9]+(?:\\.[0-9]+){1,3}(?:-devel)?)")
+                .find(value)?.groupValues?.get(1)
+        } else {
+            null
+        }
+        return (vendorVersion ?: numericVersion ?: "").take(24)
     }
 }

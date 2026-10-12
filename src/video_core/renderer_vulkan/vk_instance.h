@@ -151,7 +151,9 @@ public:
         return index_type_uint8;
     }
 
-    bool IsLsfgSupported() const { return lsfg_supported; }
+    bool IsLsfgSupported() const {
+        return lsfg_supported;
+    }
 
     /// Returns true when VK_EXT_robustness2 is supported
     bool IsNullDescriptorSupported() const {
@@ -216,6 +218,9 @@ public:
     /// Returns the vendor name reported from Vulkan.
     std::string_view GetVendorName() const {
         return vendor_name;
+    }
+    std::string_view GetDriverInfoName() const {
+        return driver_info;
     }
 
     /// Returns the list of available extensions.
@@ -318,6 +323,7 @@ protected:
     vk::DriverIdKHR driver_id;
     DebugCallback debug_callback;
     std::string vendor_name;
+    std::string driver_info;
     VmaAllocator allocator{};
     vk::Queue present_queue;
     vk::Queue graphics_queue;

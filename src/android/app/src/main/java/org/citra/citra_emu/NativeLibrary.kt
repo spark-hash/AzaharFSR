@@ -190,6 +190,7 @@ object NativeLibrary {
     external fun getLsfgStats(secondary: Boolean = false): DoubleArray
     external fun setLsfgDisplayRefreshRate(rate: Double, secondary: Boolean)
     external fun getActiveLsfgMode(secondary: Boolean = false): Int
+    external fun getShaderCompilationStats(): LongArray
 
     // Surface Handling
     external fun surfaceChanged(surf: Surface)

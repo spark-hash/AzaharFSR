@@ -9,6 +9,7 @@
 #include "video_core/renderer_vulkan/vk_lsfg.h"
 #include "video_core/renderer_vulkan/vk_present_window.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
+#include "video_core/shader_compilation_stats.h"
 
 #include <lsfg_3_1p.hpp>
 #include <vk_mem_alloc.h>
@@ -144,6 +145,7 @@ void Lsfg::Create(u32 w, u32 h, const std::string& path, unsigned factor) {
     instance.GetGraphicsQueue().submit(
         vk::SubmitInfo{.commandBufferCount = 1, .pCommandBuffers = &command}, {});
     instance.GetGraphicsQueue().waitIdle();
+    VideoCore::ShaderCompilationScope compilation;
     if (library_users == 0) {
         try {
             LSFG_3_1P::initializeOnDevice(

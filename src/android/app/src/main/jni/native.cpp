@@ -52,6 +52,7 @@
 #include "jni/camera/ndk_camera.h"
 #include "jni/camera/still_image_camera.h"
 #include "jni/config.h"
+#include "video_core/shader_compilation_stats.h"
 #ifdef ENABLE_VULKAN
 #include "video_core/renderer_vulkan/lsfg_assets.h"
 #endif
@@ -1089,6 +1090,15 @@ void Java_org_citra_citra_1emu_NativeLibrary_reloadSettings([[maybe_unused]] JNI
     }
 
     system.ApplySettings();
+}
+
+JNIEXPORT jlongArray JNICALL
+Java_org_citra_citra_1emu_NativeLibrary_getShaderCompilationStats(JNIEnv* env, jclass) {
+    const auto stats = VideoCore::GetShaderCompilationStats();
+    const jlong values[2]{static_cast<jlong>(stats[0]), static_cast<jlong>(stats[1])};
+    auto result = env->NewLongArray(2);
+    env->SetLongArrayRegion(result, 0, 2, values);
+    return result;
 }
 
 jobjectArray Java_org_citra_citra_1emu_NativeLibrary_getActiveDriverInfo(JNIEnv* env, jobject) {

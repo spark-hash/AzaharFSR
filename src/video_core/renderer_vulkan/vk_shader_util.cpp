@@ -11,6 +11,7 @@
 #include "common/logging/log.h"
 #include "common/settings.h"
 #include "video_core/renderer_vulkan/vk_shader_util.h"
+#include "video_core/shader_compilation_stats.h"
 
 namespace Vulkan {
 
@@ -162,6 +163,7 @@ bool InitializeCompiler() {
 
 std::vector<u32> CompileGLSL(std::string_view code, vk::ShaderStageFlagBits stage,
                              std::string_view premable) {
+    VideoCore::ShaderCompilationScope compilation;
     if (!InitializeCompiler()) {
         return {};
     }

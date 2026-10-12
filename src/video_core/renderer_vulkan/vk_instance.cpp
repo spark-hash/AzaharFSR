@@ -415,6 +415,7 @@ bool Instance::CreateDevice() {
 
     driver_id = driver.driverID;
     vendor_name = driver.driverName.data();
+    driver_info = driver.driverInfo.data();
 
     features = feature_chain.get().features;
     if (available_extensions.empty()) {
@@ -720,6 +721,7 @@ void Instance::CollectToolingInfo() {
 
     driver_id = driver.driverID;
     vendor_name = driver.driverName.data();
+    driver_info = driver.driverInfo.data();
 
     const std::string model_name{GetModelName()};
     const std::string driver_version = GetDriverVersionName();
