@@ -208,6 +208,7 @@ void Config::ReadValues() {
     ReadSetting("Utility", Settings::values.shared_font_mode);
     ReadSetting("Utility", Settings::values.shared_font_file);
     ReadSetting("Renderer", Settings::values.lsfg_mode);
+    ReadSetting("Renderer", Settings::values.lsfg_secondary_mode);
     ReadSetting("Renderer", Settings::values.fsr_enabled);
     ReadSetting("Renderer", Settings::values.fsr_sharpness);
     ReadSetting("Renderer", Settings::values.anime4k_strength);

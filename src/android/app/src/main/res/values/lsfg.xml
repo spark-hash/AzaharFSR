@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="lsfg_mode">LSFG frame generation</string>
+    <string name="lsfg_mode">Main display LSFG</string>
+    <string name="lsfg_secondary_mode">Secondary display LSFG</string>
+    <string name="performance_secondary_rates">Source %1$.0f · Output %2$.0f FPS · LSFG %3$s</string>
+    <string name="performance_secondary_unavailable">Source/output FPS unavailable</string>
     <string name="lsfg_description">Vulkan 1.3 only. Generates one intermediate frame for stable 30 FPS input. Requires imported Lossless Scaling shaders.</string>
     <string name="lsfg_assets">LSFG shaders</string>
     <string name="lsfg_assets_description">Import shaders from your purchased Lossless.dll</string>

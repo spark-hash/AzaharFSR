@@ -215,6 +215,10 @@ static const char* android_config_default_file_content = (BOOST_HANA_STRING(R"(
 # This is frame interpolation, not a simulation-speed change.
 lsfg_mode =
 
+)") DECLARE_KEY(lsfg_secondary_mode) BOOST_HANA_STRING(R"(
+# Independent secondary-window LSFG: 0 = off (default), 1 = up to 60 FPS.
+lsfg_secondary_mode =
+
 )") DECLARE_KEY(upscaling_mode) BOOST_HANA_STRING(R"(
 
 # Anime4K contour refinement strength, 0 to 100 (default 60).

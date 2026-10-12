@@ -136,6 +136,12 @@ class GameGraphicsActivity : AppCompatActivity() {
             R.array.upscalingValues
         )
         choice(IntSetting.LSFG_MODE, R.string.lsfg_mode, R.array.lsfgNames, R.array.lsfgValues)
+        choice(
+            IntSetting.LSFG_SECONDARY_MODE,
+            R.string.lsfg_secondary_mode,
+            R.array.lsfgNames,
+            R.array.lsfgValues
+        )
         row(getString(R.string.lsfg_assets), { getString(R.string.lsfg_assets_description) }) {
             startActivity(Intent(this, LsfgActivity::class.java))
         }

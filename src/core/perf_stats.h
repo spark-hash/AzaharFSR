@@ -26,6 +26,8 @@ public:
     ~PerfStats();
 
     using Clock = std::chrono::high_resolution_clock;
+    // Lifetime GSP submissions per game screen; independent of window presentation and polling.
+    std::array<std::atomic<u64>, 2> screen_submissions{};
 
     enum class PerfArticEventBits {
         NONE = 0,

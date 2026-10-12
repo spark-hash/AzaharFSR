@@ -87,6 +87,7 @@ import org.citra.citra_emu.utils.GameHelper
 import org.citra.citra_emu.utils.GameIconUtils
 import org.citra.citra_emu.utils.Log
 import org.citra.citra_emu.utils.LsfgDisplay
+import org.citra.citra_emu.utils.PresentationRates
 import org.citra.citra_emu.utils.ViewUtils
 import org.citra.citra_emu.viewmodel.EmulationViewModel
 
@@ -1562,14 +1563,24 @@ class EmulationFragment :
                 val hasSecondScreen =
                     emulationActivity.secondaryDisplayManager.currentDisplayId >= 0
                 if (diagnostics && hasSecondScreen &&
-                    secondary.size == 5 && lastSecondaryLsfg.size == 5
+                    secondary.size == 6 && lastSecondaryLsfg.size == 6
                 ) {
-                    val realFps = ((secondary[0] - lastSecondaryLsfg[0]) / seconds).coerceAtLeast(
-                        0.0
-                    )
+                    val rates = PresentationRates.measure(secondary, lastSecondaryLsfg, seconds)
+                    val states = resources.getStringArray(R.array.lsfgStatus)
+                    val state = secondary[3].toInt().coerceIn(states.indices)
+                    val generation = if (state == 3) "2×" else states[state]
                     fpsText += "\n" + getString(
                         R.string.performance_secondary_fps,
-                        frameRateLabel(realFps, secondary, lastSecondaryLsfg, seconds)
+                        if (rates == null) {
+                            getString(R.string.performance_secondary_unavailable)
+                        } else {
+                            getString(
+                                R.string.performance_secondary_rates,
+                                rates.source,
+                                rates.output,
+                                generation
+                            )
+                        }
                     )
                 }
                 lastSecondaryLsfg = secondary
@@ -1666,7 +1677,7 @@ class EmulationFragment :
         last: DoubleArray,
         seconds: Double
     ): String {
-        if (stats.size != 5 || last.size != 5 || !stats[3].isFinite() || stats[3].toInt() == 0) {
+        if (stats.size != 6 || last.size != 6 || !stats[3].isFinite() || stats[3].toInt() == 0) {
             return getString(R.string.performance_fps_simple, fps)
         }
         val states = resources.getStringArray(R.array.lsfgStatus)

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="lsfg_mode">LSFG 帧生成</string>
+    <string name="lsfg_mode">主屏 LSFG 帧生成</string>
+    <string name="lsfg_secondary_mode">副屏 LSFG 帧生成</string>
+    <string name="performance_secondary_rates">提交 %1$.0f · 输出 %2$.0f FPS · LSFG %3$s</string>
+    <string name="performance_secondary_unavailable">提交／输出帧率不可用</string>
     <string name="lsfg_description">仅限 Vulkan 1.3。为稳定的 30 FPS 输入生成中间帧，需要先导入 Lossless Scaling 着色器。</string>
     <string name="lsfg_assets">LSFG 着色器</string>
     <string name="lsfg_assets_description">从已购买的 Lossless.dll 导入着色器</string>

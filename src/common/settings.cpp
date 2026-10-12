@@ -246,6 +246,7 @@ void RestoreGlobalState(bool is_powered_on) {
     values.filter_mode.SetGlobal(true);
     values.anti_aliasing.SetGlobal(true);
     values.lsfg_mode.SetGlobal(true);
+    values.lsfg_secondary_mode.SetGlobal(true);
     values.shared_font_mode.SetGlobal(true);
     values.upscaling_mode.SetGlobal(true);
     values.anime4k_strength.SetGlobal(true);

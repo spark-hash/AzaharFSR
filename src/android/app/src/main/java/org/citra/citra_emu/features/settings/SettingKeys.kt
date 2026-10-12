@@ -90,6 +90,7 @@ object SettingKeys {
     external fun shared_font_mode(): String
     external fun shared_font_file(): String
     external fun lsfg_mode(): String
+    external fun lsfg_secondary_mode(): String
     external fun upscaling_mode(): String
     external fun anime4k_strength(): String
     external fun fsr_enabled(): String

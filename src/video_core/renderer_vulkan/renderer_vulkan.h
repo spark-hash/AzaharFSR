@@ -7,6 +7,7 @@
 #include "common/common_types.h"
 #include "common/math_util.h"
 #include "video_core/renderer_base.h"
+#include "video_core/renderer_vulkan/source_frame_counter.h"
 #ifdef HAVE_LIBRETRO
 #include "citra_libretro/libretro_vk.h"
 #else
@@ -157,6 +158,9 @@ private:
     vk::Pipeline cursor_pipeline{};
     vk::UniquePipelineLayout cursor_pipeline_layout{};
     bool isSecondaryWindow;
+    std::array<SourceFrameCounter, 2> source_frame_counters;
+    std::array<bool, 2> source_frame_seen{};
+    std::array<std::array<u32, 3>, 2> source_layout_sizes{};
     bool secondaryWindowEnabled;
     bool screenRendered;
 };

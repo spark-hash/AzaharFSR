@@ -101,6 +101,7 @@ foreach(KEY IN ITEMS
     "shared_font_mode"
     "shared_font_file"
     "lsfg_mode"
+    "lsfg_secondary_mode"
     "upscaling_mode"
     "anime4k_strength"
     "fsr_enabled"

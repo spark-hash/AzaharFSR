@@ -386,7 +386,7 @@ void PresentWindow::NotifySurfaceChanged() {
 
 void PresentWindow::CopyToSwapchain(Frame* frame) {
 #ifdef ANDROID
-    if (Settings::values.lsfg_mode.GetValue() != 0 && blit_supported) {
+    if (GetLsfgMode(main_window) != 0 && blit_supported) {
         if (!lsfg)
             lsfg = std::make_unique<Lsfg>(instance, scheduler, main_window);
         const auto result = lsfg->Prepare(frame);
@@ -412,7 +412,7 @@ void PresentWindow::CopyToSwapchain(Frame* frame) {
     } else {
         lsfg.reset();
         last_lsfg_present = {};
-        SetLsfgStatus(Settings::values.lsfg_mode.GetValue() ? 5 : 0, 0, main_window);
+        SetLsfgStatus(GetLsfgMode(main_window) ? 5 : 0, 0, main_window);
     }
 #endif
     PresentImage(frame, frame->image, vk::ImageLayout::eTransferSrcOptimal, true, true);

@@ -8,6 +8,7 @@
 #include <mutex>
 #include <vector>
 #include <pe-parse/parse.h>
+#include "common/settings.h"
 #include "extract/trans.hpp"
 #include "video_core/renderer_vulkan/lsfg_assets.h"
 
@@ -17,6 +18,7 @@ std::mutex asset_mutex;
 std::string shader_directory;
 struct DisplayStats {
     std::atomic<unsigned long long> real{}, generated{};
+    std::atomic<unsigned long long> source{};
     std::atomic<double> milliseconds{}, refresh_rate{};
     std::atomic<int> status{};
     std::atomic<unsigned> multiplier{1};
@@ -104,11 +106,21 @@ std::string ImportLsfgShaders(const std::string& dll, const std::string& output)
         return error.what();
     }
 }
-std::array<double, 5> GetLsfgStats(bool main_window) {
+unsigned GetLsfgMode(bool main_window) {
+    return main_window ? Settings::values.lsfg_mode.GetValue()
+                       : Settings::values.lsfg_secondary_mode.GetValue();
+}
+void CountLsfgSourceFrames(unsigned long long frames, bool main_window) {
+    display_stats[main_window ? 0 : 1].source += frames;
+}
+std::array<double, 6> GetLsfgStats(bool main_window) {
     const auto& stats = display_stats[main_window ? 0 : 1];
-    return {static_cast<double>(stats.real.load()), static_cast<double>(stats.generated.load()),
-            stats.milliseconds.load(), static_cast<double>(stats.status.load()),
-            static_cast<double>(stats.multiplier.load())};
+    return {static_cast<double>(stats.real.load()),
+            static_cast<double>(stats.generated.load()),
+            stats.milliseconds.load(),
+            static_cast<double>(stats.status.load()),
+            static_cast<double>(stats.multiplier.load()),
+            static_cast<double>(stats.source.load())};
 }
 void SetLsfgDisplayRefreshRate(double rate, bool main_window) {
     if (std::isfinite(rate) && rate >= 0 && rate <= 1000)

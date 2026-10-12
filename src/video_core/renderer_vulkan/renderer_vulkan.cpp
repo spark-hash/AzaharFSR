@@ -12,6 +12,7 @@
 #include "core/frontend/emu_window.h"
 #include "video_core/gpu.h"
 #include "video_core/pica/pica_core.h"
+#include "video_core/renderer_vulkan/lsfg_assets.h"
 #include "video_core/renderer_vulkan/renderer_vulkan.h"
 #include "video_core/renderer_vulkan/vk_antialiasing.h"
 #include "video_core/renderer_vulkan/vk_fsr.h"
@@ -242,10 +243,26 @@ void RendererVulkan::PrepareDraw(Frame* frame, const Layout::FramebufferLayout& 
 void RendererVulkan::RenderToWindow(PresentWindow& window, const Layout::FramebufferLayout& layout,
                                     bool flipped) {
     bool skip_duplicates = Settings::values.use_skip_duplicate_frames.GetValue();
+    const bool main_window = !isSecondaryWindow;
+    const bool top = layout.top_screen_enabled ||
+                     (layout.additional_screen_enabled && !layout.additional_screen_is_bottom);
+    const bool bottom = layout.bottom_screen_enabled ||
+                        (layout.additional_screen_enabled && layout.additional_screen_is_bottom);
+    const std::array<u32, 3> source_layout{layout.width, layout.height,
+                                           (top ? 1u : 0u) | (bottom ? 2u : 0u)};
+    const bool first_frame = !source_frame_seen[main_window ? 0 : 1] ||
+                             source_layout_sizes[main_window ? 0 : 1] != source_layout;
+    source_layout_sizes[main_window ? 0 : 1] = source_layout;
+    source_frame_seen[main_window ? 0 : 1] = true;
+    const u64 source_frames = source_frame_counters[main_window ? 0 : 1].Update(
+        {system.perf_stats->screen_submissions[0].load(),
+         system.perf_stats->screen_submissions[1].load()},
+        top, bottom);
 #ifdef ANDROID
-    skip_duplicates |= Settings::values.lsfg_mode.GetValue() != 0;
+    CountLsfgSourceFrames(source_frames, main_window);
+    skip_duplicates |= GetLsfgMode(main_window) != 0;
 #endif
-    if (!skip_duplicates || Core::PerfStats::game_frames_updated) {
+    if (!skip_duplicates || source_frames != 0 || first_frame) {
         Frame* frame = window.GetRenderFrame();
         frame->source_time = std::chrono::steady_clock::now();
         frame->source_emulated_us = system.CoreTiming().GetGlobalTimeUs().count();
@@ -264,10 +281,7 @@ void RendererVulkan::RenderToWindow(PresentWindow& window, const Layout::Framebu
         DrawScreens(frame, layout, flipped);
         scheduler.Flush(frame->render_ready);
         window.Present(frame);
-        if ((secondaryWindowEnabled && isSecondaryWindow) || (!secondaryWindowEnabled)) {
-            Core::PerfStats::game_frames_updated = false;
-            screenRendered = true;
-        }
+        screenRendered = true;
     }
 }
 
@@ -1263,6 +1277,13 @@ void RendererVulkan::SwapBuffers() {
         secondary_window->PollEvents();
     }
 #endif
+    if (!secondary_window) {
+        source_frame_counters[1].Update({system.perf_stats->screen_submissions[0].load(),
+                                         system.perf_stats->screen_submissions[1].load()},
+                                        false, false);
+        source_frame_seen[1] = false;
+    }
+    Core::PerfStats::game_frames_updated = false;
     if (!screenRendered) {
         scheduler.Finish();
     }

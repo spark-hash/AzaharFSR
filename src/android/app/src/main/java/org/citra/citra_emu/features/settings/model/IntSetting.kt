@@ -22,6 +22,7 @@ enum class IntSetting(
     ANTI_ALIASING(SettingKeys.anti_aliasing(), Settings.SECTION_RENDERER, 0),
     SHARED_FONT_MODE(SettingKeys.shared_font_mode(), Settings.SECTION_UTILITY, 0),
     LSFG_MODE(SettingKeys.lsfg_mode(), Settings.SECTION_RENDERER, 0),
+    LSFG_SECONDARY_MODE(SettingKeys.lsfg_secondary_mode(), Settings.SECTION_RENDERER, 0),
     UPSCALING_MODE(SettingKeys.upscaling_mode(), Settings.SECTION_RENDERER, 0),
     ANIME4K_STRENGTH(SettingKeys.anime4k_strength(), Settings.SECTION_RENDERER, 60),
     FSR_SHARPNESS(SettingKeys.fsr_sharpness(), Settings.SECTION_RENDERER, 50),

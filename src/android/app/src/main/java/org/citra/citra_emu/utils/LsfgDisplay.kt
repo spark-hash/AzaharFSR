@@ -15,7 +15,7 @@ object LsfgDisplay {
     fun update(surface: Surface, display: Display?, secondary: Boolean, window: Window?) {
         if (display == null || !surface.isValid) return
         NativeLibrary.setLsfgDisplayRefreshRate(display.refreshRate.toDouble(), secondary)
-        val mode = NativeLibrary.getActiveLsfgMode()
+        val mode = NativeLibrary.getActiveLsfgMode(secondary)
         val target = if (mode != 0) {
             60f
         } else {

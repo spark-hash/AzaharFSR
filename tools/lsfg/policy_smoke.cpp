@@ -4,6 +4,7 @@
 #include <limits>
 #include <stdexcept>
 #include "video_core/renderer_vulkan/lsfg_policy.h"
+#include "video_core/renderer_vulkan/source_frame_counter.h"
 
 int main() {
     const auto check = [](bool value) {
@@ -26,5 +27,11 @@ int main() {
     check(LsfgSpacing(2, 120, 0.028) >= 1.0 / 60);
     check(LsfgSpacing(2, 60, 0.028) >= 1.0 / 60);
     check(std::abs(LsfgSpacing(2, 120, 1.0 / 30) - 1.0 / 60) < 1e-9);
-    std::cout << "15 LSFG cadence and dual-display policy checks passed\n";
+    Vulkan::SourceFrameCounter source;
+    check(source.Update({60, 30}, false, true) == 30);
+    check(source.Update({120, 30}, false, true) == 0);
+    check(source.Update({120, 30}, true, false) == 0);
+    check(source.Update({150, 60}, true, true) == 30);
+    check(source.Update({0, 0}, true, true) == 0);
+    std::cout << "20 LSFG cadence and per-screen submission checks passed\n";
 }

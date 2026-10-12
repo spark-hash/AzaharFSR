@@ -1069,6 +1069,17 @@ class SettingsFragmentPresenter(private val fragmentView: SettingsFragmentView) 
                 )
             )
             add(
+                SingleChoiceSetting(
+                    IntSetting.LSFG_SECONDARY_MODE,
+                    R.string.lsfg_secondary_mode,
+                    R.string.lsfg_description,
+                    R.array.lsfgNames,
+                    R.array.lsfgValues,
+                    IntSetting.LSFG_SECONDARY_MODE.key,
+                    IntSetting.LSFG_SECONDARY_MODE.defaultValue
+                )
+            )
+            add(
                 RunnableSetting(
                     R.string.lsfg_assets,
                     R.string.lsfg_assets_description,

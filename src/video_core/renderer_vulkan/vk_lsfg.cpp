@@ -189,8 +189,7 @@ Lsfg::Result Lsfg::Prepare(Frame* frame) {
             previous_emulated_us > 0 && frame->source_emulated_us > previous_emulated_us
                 ? (frame->source_emulated_us - previous_emulated_us) / 1e6
                 : 0;
-        const auto factor =
-            LsfgMultiplier(Settings::values.lsfg_mode.GetValue(), refresh, native_seconds);
+        const auto factor = LsfgMultiplier(GetLsfgMode(main_window), refresh, native_seconds);
         if (initialized &&
             (width != frame->width || height != frame->height || multiplier != factor))
             Reset();

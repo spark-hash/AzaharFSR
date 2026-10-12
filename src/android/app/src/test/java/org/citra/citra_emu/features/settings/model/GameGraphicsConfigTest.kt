@@ -131,6 +131,28 @@ class GameGraphicsConfigTest {
         assertEquals("1", restored.effective("Renderer", "lsfg_mode", global, "0"))
     }
 
+    @Test fun independentLsfgModesRetainPerGameOverrides() {
+        val global = GameGraphicsConfig("[Renderer]\nlsfg_mode=1\nlsfg_secondary_mode=1\n")
+        val game = GameGraphicsConfig()
+        game.set("Renderer", "lsfg_secondary_mode", "0")
+        val restored = GameGraphicsConfig(game.encode())
+        assertEquals("1", restored.effective("Renderer", "lsfg_mode", global, "0"))
+        assertEquals("0", restored.effective("Renderer", "lsfg_secondary_mode", global, "0"))
+        restored.set("Renderer", "lsfg_secondary_mode", null)
+        assertEquals("1", restored.effective("Renderer", "lsfg_secondary_mode", global, "0"))
+    }
+
+    @Test fun secondaryLsfgDoesNotFollowLegacyMainSwitch() {
+        val global = GameGraphicsConfig("[Renderer]\nlsfg_mode=1\n")
+        val game = GameGraphicsConfig()
+        assertEquals("0", game.effective("Renderer", "lsfg_secondary_mode", global, "0"))
+        game.set("Renderer", "lsfg_mode", "0")
+        game.set("Renderer", "lsfg_secondary_mode", "1")
+        val restored = GameGraphicsConfig(game.encode())
+        assertEquals("0", restored.effective("Renderer", "lsfg_mode", global, "0"))
+        assertEquals("1", restored.effective("Renderer", "lsfg_secondary_mode", global, "0"))
+    }
+
     @Test fun removedLsfg120ModeMigratesWithoutLosingOverride() {
         val global = GameGraphicsConfig("[Renderer]\nlsfg_mode=1\n")
         val game = GameGraphicsConfig("[Renderer]\nlsfg_mode=2\n")
